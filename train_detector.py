@@ -64,10 +64,10 @@ def train_model(model, optimizer, scheduler, num_epochs, dataloaders, device, mo
             count_batches = 0
             # Iterate over data.
             for ndx, (images, boxes, labels) in enumerate(dataloaders[phase]):
-                images = images.to(device)
+                images = images.to(device, copy=True)
                 h, w = images.shape[-2], images.shape[-1]
                 gt_maps = model.groundtruth_maps(boxes, labels, (h, w))
-                gt_maps = [e.to(device) for e in gt_maps]
+                gt_maps = [e.to(device, copy=True) for e in gt_maps]
                 count_batches += 1
 
                 with torch.set_grad_enabled(phase == 'train'):
@@ -106,6 +106,13 @@ def train_model(model, optimizer, scheduler, num_epochs, dataloaders, device, mo
 
     model_filepath = os.path.join(MODEL_FOLDER, model_name + '_final' + '.pth')
     torch.save(model.state_dict(), model_filepath)
+    model_filepath = os.path.join(MODEL_FOLDER, model_name + '_checkpoint' + '.pth')
+    torch.save({
+        'epoch': num_epochs,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'loss': loss.item(),
+    }, model_filepath)
 
     with open('training_stats_{}.pickle'.format(model_name), 'wb') as handle:
         pickle.dump(training_stats, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -126,6 +133,8 @@ def train(params: Params):
 
     # Create model
     device = "cuda" if torch.cuda.is_available() else 'cpu'
+    # if torch.mps.device_count() > 0:
+    #     device = "mps"
     model = footandball.model_factory(params.model, 'train')
     model.print_summary(show_architecture=True)
     model = model.to(device)
@@ -136,6 +145,13 @@ def train(params: Params):
     optimizer = optim.Adam(model.parameters(), lr=params.lr)
     scheduler_milestones = [int(params.epochs * 0.75)]
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, scheduler_milestones, gamma=0.1)
+
+    # load from checkpoint
+    if params.checkpoint_path is not None:
+        print('Loading checkpoint: {}'.format(params.checkpoint_path))
+        checkpoint = torch.load(params.checkpoint_path)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     train_model(model, optimizer, scheduler, params.epochs, dataloaders, device, model_name)
 
 

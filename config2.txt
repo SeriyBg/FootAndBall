@@ -1,7 +1,5 @@
 [DEFAULT]
 
-checkpoint_path=/Users/sergebishyr/PhD/Courses/PythonProject/FootAndBall/models/model_20250122_1449_checkpoint.pth
-
 issia_path=/Users/sergebishyr/PhD/datasets/issia
 issia_train_cameras=1,2,3,4
 issia_val_cameras=5,6
@@ -9,7 +7,7 @@ issia_val_cameras=5,6
 spd_path=/Users/sergebishyr/PhD/datasets/SoccerPlayerDetection_bmvc17_v1
 spd_set=1,2
 
-epochs=15
+epochs=5
 lr=1e-3
 batch_size=12
 num_workers=8

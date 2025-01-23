@@ -2,7 +2,6 @@
 # Jacek Komorowski, Grzegorz Kurzejamski, Grzegorz Sarwas
 # Copyright (c) 2020 Sport Algorithmics and Gaming
 
-from torchvision import transforms
 from PIL import Image
 import numpy as np
 import numbers
@@ -313,6 +312,7 @@ class TrainAugmentation(object):
             ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
             RandomAffine(degrees=5, scale=(0.8, 1.2), p_hflip=0.5),
             RandomCrop(self.size),
+            # transforms.RandomHorizontalFlip(), #TODO try with this
             ToTensorAndNormalize()
         ])
 
@@ -330,3 +330,4 @@ class NoAugmentation(object):
 
     def __call__(self, sample):
         return self.augment(sample)
+
