@@ -480,7 +480,7 @@ if __name__ == '__main__':
     # Read ISSIA sequence and visualize ground truth
     # ISSIA dataset can be downloaded from http://www.issia.cnr.it/wp/dataset-cnr-fig/
     # Camera ids are between 1 and 6
-    dataset_path = '/media/jacek/312b3cfe-6e0b-4a43-9b11-d163c1d5d5ad/data/issia'
+    dataset_path = '/Users/sergebishyr/PhD/datasets/issia'
     camera_id = 1
     sequence = open_issia_sequence(camera_id, dataset_path)
 
@@ -488,7 +488,7 @@ if __name__ == '__main__':
     gt_annotations = read_issia_ground_truth(camera_id, dataset_path)
 
     # Show annotated video sequence
-    visualize_detection_results(camera_id, dataset_path, gt_annotations=gt_annotations)
+    # visualize_detection_results(camera_id, dataset_path, gt_annotations=gt_annotations)
 
     # Ball detection in pixels performance
     # This should return all ones as we evaluate the performance on ground truth data

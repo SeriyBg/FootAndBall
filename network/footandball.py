@@ -5,7 +5,7 @@
 import torch
 import torch.nn as nn
 
-import network.fpn as fpn
+import network.fpn2 as fpn
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
 
@@ -365,8 +365,8 @@ def model_factory(model_name, phase, max_player_detections=100, max_ball_detecti
 
 
 if __name__ == '__main__':
-    net = model_factory('fb2', 'train')
-    net.print_summary()
+    net = model_factory('fb1', 'train')
+    net.print_summary(show_architecture=True)
 
     x = torch.zeros((2, 3, 1024, 1024))
     x = net(x)
