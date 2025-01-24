@@ -66,7 +66,14 @@ class FPN(nn.Module):
                                                  padding=0))
             # Transpose convolution layer for upsampling
             self.transpose_layers.append(
-                nn.ConvTranspose2d(self.lateral_channels, self.lateral_channels, kernel_size=2, stride=2)
+                nn.ConvTranspose2d(
+                    self.lateral_channels,
+                    self.lateral_channels,
+                    kernel_size=2,  # Double the spatial dimensions
+                    stride=2,
+                    padding=0,  # No additional padding
+                    output_padding=1  # Adjust the output size to match the lateral feature map
+                )
             )
 
     def _upsample_add(self, x, y, upsample_layer):
@@ -78,7 +85,8 @@ class FPN(nn.Module):
         Returns:
           (Variable) added feature map.
         '''
-        x_upsampled = upsample_layer(x)  # Perform upsampling
+        _, _, H, W = y.size()
+        x_upsampled = upsample_layer(x, output_size=(H, W))  # Use output_size to explicitly match dimensions
         return x_upsampled + y
 
     def forward(self, x):
