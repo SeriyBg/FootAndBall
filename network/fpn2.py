@@ -3,6 +3,8 @@
 # Copyright (c) 2020 Sport Algorithmics and Gaming
 
 import torch.nn as nn
+import torch.nn.functional as F
+
 
 cfg = {
     # Config according to the Table 1 from the FootAndBall paper
@@ -11,7 +13,7 @@ cfg = {
 
 
 def make_modules(cfg, batch_norm=False):
-    # Each module is a list of sequential layers operating at the same spacial dimension followed by MaxPool2d
+    # Each module is a list of sequential layers operating at the same spatial dimension followed by MaxPool2d
     modules = nn.ModuleList()
     # Number of output channels in each module
     out_channels = []
@@ -54,25 +56,22 @@ class FPN(nn.Module):
         self.lateral_layers = nn.ModuleList()
         self.transpose_layers = nn.ModuleList()  # Transpose convolution layers
         if return_layers is None:
-            # Feature maps from all FPN levels are returned
-            self.return_layers = list(range(len(layers)-1))
+            self.return_layers = list(range(len(layers) - 1))
         else:
             self.return_layers = return_layers
         self.min_returned_layer = min(self.return_layers)
 
-        # Make lateral layers (for channel reduction) and transpose convolution layers
         for i in range(self.min_returned_layer, len(self.layers)):
             self.lateral_layers.append(nn.Conv2d(out_channels[i], self.lateral_channels, kernel_size=1, stride=1,
                                                  padding=0))
-            # Transpose convolution layer for upsampling
             self.transpose_layers.append(
                 nn.ConvTranspose2d(
                     self.lateral_channels,
                     self.lateral_channels,
-                    kernel_size=2,  # Double the spatial dimensions
+                    kernel_size=2,
                     stride=2,
-                    padding=0,  # No additional padding
-                    output_padding=1  # Adjust the output size to match the lateral feature map
+                    padding=0,
+                    output_padding=1
                 )
             )
 
@@ -99,11 +98,11 @@ class FPN(nn.Module):
         # Top-down pass
         p = [self.lateral_layers[-1](c[-1])]
 
-        for i in range(len(c)-2, self.min_returned_layer-1, -1):
+        for i in range(len(c) - 2, self.min_returned_layer - 1, -1):
             temp = self._upsample_add(
                 p[-1],
-                self.lateral_layers[i-self.min_returned_layer](c[i]),
-                self.transpose_layers[i-self.min_returned_layer]  # Use corresponding transpose convolution layer
+                self.lateral_layers[i - self.min_returned_layer](c[i]),
+                self.transpose_layers[i - self.min_returned_layer]  # Use corresponding transpose convolution layer
             )
             p.append(temp)
 
@@ -112,7 +111,7 @@ class FPN(nn.Module):
 
         out_tensors = []
         for ndx, l in enumerate(self.return_layers):
-            temp = p[l-self.min_returned_layer]
+            temp = p[l - self.min_returned_layer]
             out_tensors.append(temp)
 
         return out_tensors

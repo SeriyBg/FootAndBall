@@ -76,8 +76,6 @@ def train_model(model, optimizer, scheduler, num_epochs, dataloaders, device, mo
                     # Backpropagation
                     optimizer.zero_grad()
                     loss_l_player, loss_c_player, loss_c_ball = criterion(predictions, gt_maps)
-                    test_p = build_annotations_from_predictions(predictions)
-                    test_gt = build_annotations_from_predictions(gt_maps)
 
                     loss = alpha_l_player * loss_l_player + alpha_c_player * loss_c_player + alpha_c_ball * loss_c_ball
 

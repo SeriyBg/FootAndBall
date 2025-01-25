@@ -488,7 +488,7 @@ if __name__ == '__main__':
     gt_annotations = read_issia_ground_truth(camera_id, dataset_path)
 
     # Show annotated video sequence
-    # visualize_detection_results(camera_id, dataset_path, gt_annotations=gt_annotations)
+    visualize_detection_results(camera_id, dataset_path, gt_annotations=gt_annotations)
 
     # Ball detection in pixels performance
     # This should return all ones as we evaluate the performance on ground truth data
