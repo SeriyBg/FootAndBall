@@ -1,21 +1,40 @@
 import torch
 import pickle
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-    # checkpoint = torch.load("models/model_20250122_1323_checkpoint.pth", weights_only=False)
-    # print(checkpoint["epoch"])
-    # print(checkpoint["loss"])
-    # checkpoint = torch.load("models/model_20250122_1449_checkpoint.pth", weights_only=False)
-    # print(checkpoint["epoch"])
-    # print(checkpoint["loss"])
-
     checkpoint = torch.load("/Users/sergebishyr/PhD/models/no_changes_20e/model_20250123_1816_checkpoint.pth", weights_only=False, map_location=torch.device('cpu'))
+    print(checkpoint["epoch"])
+    print(checkpoint["loss"])
+    checkpoint = torch.load("/Users/sergebishyr/PhD/models/model_20250125_1750_checkpoint.pth", weights_only=False, map_location=torch.device('cpu'))
     print(checkpoint["epoch"])
     print(checkpoint["loss"])
 
     ts = pickle.load(open("/Users/sergebishyr/PhD/models/no_changes_20e/training_stats_model_20250123_1816.pickle", "rb"))
     print(ts)
-    ts = pickle.load(open("training_stats_model_20250121_1848.pickle", "rb"))
+    ts = pickle.load(open("/Users/sergebishyr/PhD/models/training_stats_model_20250125_1750.pickle", "rb"))
     print(ts)
-    # ts = pickle.load(open("training_stats_model_20250122_2029.pickle", "rb"))
-    # print(ts)
+
+    # Load the pickle file
+    file_path = '/Users/sergebishyr/PhD/models/training_stats_model_20250125_1750.pickle'  # Replace with your actual file path
+    with open(file_path, 'rb') as f:
+        data = pickle.load(f)
+
+    # Extract training and validation losses
+    train_losses = [entry['loss'] for entry in data['train']]
+    val_losses = [entry['loss'] for entry in data['val']]
+
+    # Plot the learning curve
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_losses, label='Training Loss', marker='o', linestyle='-')
+    plt.plot(val_losses, label='Validation Loss', marker='s', linestyle='--')
+
+    # Add labels, legend, and title
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Learning Curve')
+    plt.legend()
+    plt.grid(True)
+
+    # Show the plot
+    plt.show()
