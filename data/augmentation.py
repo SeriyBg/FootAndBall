@@ -115,6 +115,13 @@ class ColorJitter(object):
         image, boxes, labels = sample
         return self.image_transform(image), boxes, labels
 
+class RandomHorizontalFlip(object):
+    def __init__(self, p=0.5):
+        self.image_transform = transforms.RandomHorizontalFlip(p=p)
+
+    def __call__(self, sample):
+        image, boxes, labels = sample
+        return self.image_transform(image), boxes, labels
 
 class RandomAffine:
     """Random affine transformation of the image keeping center invariant
@@ -312,7 +319,7 @@ class TrainAugmentation(object):
             ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
             RandomAffine(degrees=5, scale=(0.8, 1.2), p_hflip=0.5),
             RandomCrop(self.size),
-            transforms.RandomHorizontalFlip(),
+            RandomHorizontalFlip(p = 0.5),
             ToTensorAndNormalize()
         ])
 
