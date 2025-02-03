@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 cfg = {
     # Config according to the Table 1 from the FootAndBall paper
-    'X': [16, 'M', 32, 32, 'M', 32, 32, 'M', 64, 64, 'M', 64, 64, 'M'],
+    'X': [16, 'M', 32, 32, 'M', 32, 32, 'M', 64, 64, 'M', 64, 64, 'M', 128, 128, 'M'],
 }
 
 

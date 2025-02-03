@@ -5,7 +5,7 @@
 import torch
 import torch.nn as nn
 
-import network.fpn_unet as fpn
+import network.fpn_deep as fpn
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
 
