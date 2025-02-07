@@ -65,7 +65,7 @@ class BalancedSampler(Sampler):
     def generate_samples(self):
         # Sample generation function expects concatenation of 2 datasets: one is ISSIA CNR and the other is SPD
         # or only one ISSIA CNR dataset.
-        assert len(self.data_source.datasets) <= 4
+        assert len(self.data_source.datasets) <= 2
         issia_dataset_ndx = None
         spd_dataset_ndx = None
         for ndx, ds in enumerate(self.data_source.datasets):
