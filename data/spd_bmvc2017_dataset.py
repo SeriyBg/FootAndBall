@@ -79,12 +79,14 @@ class SpdDataset(torch.utils.data.Dataset):
 
 def create_spd_dataset(dataset_path, ids, mode):
     # Merge multiple Datasets and then splits them into one training and one validation dataset
-    assert mode == 'train' or mode == 'val'
+    assert mode == 'train' or mode == 'val' or mode == 'train+augment'
     assert os.path.exists(dataset_path), 'Cannot find dataset: ' + str(dataset_path)
 
     image_size = (720, 1280)
     if mode == 'train':
         transform = augmentation.TrainAugmentation(size=image_size)
+    elif mode == 'train+augment':
+        transform = augmentation.TrainAugmentation2(size=image_size)
     elif mode == 'val':
         transform = augmentation.NoAugmentation(size=image_size)
 
