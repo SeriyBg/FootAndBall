@@ -16,7 +16,7 @@ from torch.utils.data import Sampler
 
 class IssiaDataset(torch.utils.data.Dataset):
     # Read images from the ISSIA dataset
-    def __init__(self, dataset_path, cameras, transform, only_ball_frames=False):
+    def __init__(self, dataset_path, cameras, transform, transform2, only_ball_frames=False):
         """
         Args:
             root_dir: Directory with all the images
@@ -29,6 +29,7 @@ class IssiaDataset(torch.utils.data.Dataset):
         self.dataset_path = dataset_path
         self.cameras = cameras
         self.transform = transform
+        self.transform2 = transform2
         self.only_ball_frames = only_ball_frames
         self.image_extension = '.png'
         # Dictionary with ground truth annotations per camera
@@ -80,10 +81,14 @@ class IssiaDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, ndx):
         # Returns transferred image as a normalized tensor
+        transform = self.transform
+        if ndx > self.n_images // 2:
+            ndx = ndx - (self.n_images // 2)
+            transform = self.transform2
         image_path, camera_id, image_ndx = self.image_list[ndx]
         image = Image.open(image_path)
         boxes, labels = self.get_annotations(camera_id, image_ndx)
-        image, boxes, labels = self.transform((image, boxes, labels))
+        image, boxes, labels = transform((image, boxes, labels))
 
         boxes = torch.tensor(boxes, dtype=torch.float)
         labels = torch.tensor(labels, dtype=torch.int64)
@@ -132,8 +137,9 @@ def create_issia_dataset(dataset_path, cameras, mode, only_ball_frames=False):
     val_image_size = (1080, 1920)
     if mode == 'train':
         transform = augmentation.TrainAugmentation(size=train_image_size)
+        transform2 = augmentation.TrainAugmentation2(size=train_image_size)
     elif mode == 'val':
         transform = augmentation.NoAugmentation(size=val_image_size)
 
-    dataset = IssiaDataset(dataset_path, cameras, transform, only_ball_frames=only_ball_frames)
+    dataset = IssiaDataset(dataset_path, cameras, transform, transform2, only_ball_frames=only_ball_frames)
     return dataset

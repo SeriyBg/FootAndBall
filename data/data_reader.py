@@ -6,7 +6,7 @@ import random
 import torch
 from torch.utils.data import Sampler, DataLoader, ConcatDataset
 
-from data.issia_dataset import create_issia_dataset, IssiaDataset
+from data.issia_dataset2 import create_issia_dataset, IssiaDataset
 from data.spd_bmvc2017_dataset import create_spd_dataset
 from misc.config import Params
 
@@ -17,8 +17,6 @@ def make_dataloaders(params: Params):
         train_issia_dataset2 = None
     else:
         train_issia_dataset = create_issia_dataset(params.issia_path, params.issia_train_cameras, mode='train',
-                                                   only_ball_frames=False)
-        train_issia_dataset2 = create_issia_dataset(params.issia_path, params.issia_train_cameras, mode='train+augment',
                                                    only_ball_frames=False)
         if len(params.issia_val_cameras) == 0:
             val_issia_dataset = None
@@ -31,15 +29,13 @@ def make_dataloaders(params: Params):
         train_spd_dataset2 = None
     else:
         train_spd_dataset = create_spd_dataset(params.spd_path, params.spd_set, mode='train')
-        train_spd_dataset2 = create_spd_dataset(params.spd_path, params.spd_set, mode='train+augment')
 
     dataloaders = {}
     if val_issia_dataset is not None:
         dataloaders['val'] = DataLoader(val_issia_dataset, batch_size=2, num_workers=params.num_workers,
                                         pin_memory=True, collate_fn=my_collate)
 
-    #train_dataset = ConcatDataset([train_issia_dataset, train_spd_dataset])
-    train_dataset = ConcatDataset([train_issia_dataset, train_issia_dataset2, train_spd_dataset, train_spd_dataset2])
+    train_dataset = ConcatDataset([train_issia_dataset, train_spd_dataset])
     batch_sampler = BalancedSampler(train_dataset)
     dataloaders['train'] = DataLoader(train_dataset, sampler=batch_sampler, batch_size=params.batch_size,
                                       num_workers=params.num_workers, pin_memory=True, collate_fn=my_collate)
