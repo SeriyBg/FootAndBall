@@ -140,6 +140,7 @@ def create_issia_dataset(dataset_path, cameras, mode, only_ball_frames=False):
         transform2 = augmentation.TrainAugmentation2(size=train_image_size)
     elif mode == 'val':
         transform = augmentation.NoAugmentation(size=val_image_size)
+        transform2 = augmentation.NoAugmentation(size=val_image_size)
 
     dataset = IssiaDataset(dataset_path, cameras, transform, transform2, only_ball_frames=only_ball_frames)
     return dataset
