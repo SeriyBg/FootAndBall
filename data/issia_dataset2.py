@@ -82,7 +82,7 @@ class IssiaDataset(torch.utils.data.Dataset):
     def __getitem__(self, ndx):
         # Returns transferred image as a normalized tensor
         transform = self.transform
-        if ndx > len(self.image_list):
+        if ndx >= len(self.image_list):
             ndx = ndx - (len(self.image_list))
             transform = self.transform2
         image_path, camera_id, image_ndx = self.image_list[ndx]
