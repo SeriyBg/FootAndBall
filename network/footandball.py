@@ -5,9 +5,10 @@
 import torch
 import torch.nn as nn
 
-import network.fpn_unet_deep as fpn
+import network.fpn as fpn
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
+from network.ball_classifier import BallClassifierRNN
 
 
 # Get ranges of cells to mark with ground truth location
@@ -267,7 +268,7 @@ class FootAndBall(nn.Module):
         assert x[1].shape[2] == height // self.player_downsampling_factor
         assert x[1].shape[3] == width // self.player_downsampling_factor
 
-        ball_feature_map = self.ball_classifier(x[0])
+        ball_feature_map, self.h_ball = self.ball_classifier(x[0], getattr(self, 'h_ball', None))
         player_feature_map = self.player_classifier(x[1])
         player_bbox = self.player_regressor(x[1])
 
@@ -336,9 +337,10 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     i_channels = 32
 
     base_net = fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
-    ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
-                                    nn.ReLU(inplace=True),
-                                    nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    ball_classifier = BallClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
+    # ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+    #                                 nn.ReLU(inplace=True),
+    #                                 nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
     player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
                                       nn.ReLU(inplace=True),
                                       nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))

@@ -221,7 +221,7 @@ def _create_annotations(gt, camera_id, frame_shape):
             for i in range(start_frame, end_frame+1):
                 annotations.interacting_player[i+delta].append(value)
 
-    for player in gt['Person']:
+    for player in gt['Person']: # iterate over player IDs
         for (start_frame, end_frame, height, width, x, y) in gt['Person'][player]:
             assert start_frame <= end_frame
             for i in range(start_frame, end_frame+1):
@@ -308,7 +308,7 @@ def _annotate_frame(frame, frame_id, annotations, color=(0, 0, 255)):
     # Ball position
     for (x,y) in annotations.ball_pos[frame_id]:
         if x > -1 and y > -1:
-            cv2.circle(frame, (x, y), 10, color, -1)
+            cv2.circle(frame, (x, y), 10, color, thickness=2)
 
     #Ball shot
     #if annotations.ball_shot[frame_id]:
@@ -403,8 +403,11 @@ def evaluate_ball_detection_results(annotations, gt_annotations, tolerance):
     for i in range(start_frame, end_frame):
         ball_pos = annotations.ball_pos[i]
         gt_ball_pos = gt_annotations.ball_pos[i]
-        frame_stats.append(_ball_detection_stats(ball_pos, gt_ball_pos, tolerance))
-
+        stats = _ball_detection_stats(ball_pos, gt_ball_pos, tolerance)
+        (_, _, correctly_classified) = stats
+        if not correctly_classified:
+            print('Frame: ' + str(i) + '; GT: ' + str(gt_ball_pos) + '; Detected: ' + str(ball_pos))
+        frame_stats.append(stats)
     percent_correctly_classified_frames = sum([c for (_,_,c) in frame_stats])/len(frame_stats)
     temp = [p for (p, _, _) in frame_stats if p is not None]
     avg_precision = sum(temp)/len(temp)
@@ -451,6 +454,34 @@ def visualize_detection_results(camera_id, dataset_path, gt_annotations=None, an
     sequence.release()
     cv2.destroyAllWindows()
 
+def save_detection_results(camera_id, dataset_path, gt_annotations=None, annotations=None):
+    '''
+    Visualize ground truth annotations (in blue) and detected annotations (in red)
+    :param camera_id: ID of the ISSIA video sequence
+    :param gt_annotations: SequenceAnnotations object with ground truth annotations
+    :param annotations: SequenceAnnotations object with detected annotations. If None only ground truth annotations are
+                        shown
+    :return:
+    '''
+    sequence = open_issia_sequence(camera_id, dataset_path)
+    count_frames = -1
+    while (sequence.isOpened()):
+        ret, frame = sequence.read()
+        count_frames += 1
+
+        if not ret:
+            # End of sequence
+            break
+
+        if not gt_annotations is None:
+            frame = _annotate_frame(frame, count_frames, gt_annotations, color=(0, 0, 255))
+
+        if not annotations is None:
+            frame = _annotate_frame(frame, count_frames, annotations, color=(255, 0, 0))
+
+        cv2.imwrite('/Users/sergebishyr/PhD/datasets/detection_result/' + str(count_frames) + '.png', frame)
+
+    sequence.release()
 
 def extract_frames(dataset_path, camera_id, frames_path):
     # Extract frames from the sequence

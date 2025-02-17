@@ -16,7 +16,6 @@ import time
 import torch
 import torch.optim as optim
 
-from data.evaluation_utils import build_annotations_from_predictions
 from network import footandball
 from data.data_reader import make_dataloaders
 from network.ssd_loss import SSDLoss

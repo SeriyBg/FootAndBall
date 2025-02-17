@@ -16,7 +16,7 @@ if __name__ == '__main__':
     # print(ts)
 
     # Load the pickle file
-    file_path = '/Users/sergebishyr/PhD/models/deeep_transp/training_stats_model_20250205_1439.pickle'  # Replace with your actual file path
+    file_path = '/Users/sergebishyr/PhD/models/training_stats_model_20250209_1425.pickle'  # Replace with your actual file path
     with open(file_path, 'rb') as f:
         data = pickle.load(f)
 
@@ -35,8 +35,8 @@ if __name__ == '__main__':
 
     # Plot the learning curve
     plt.figure(figsize=(12, 7))
-    plt.plot(train_losses, label='Training Loss +1 Transp', marker='o', linestyle='-')
-    plt.plot(val_losses, label='Validation Loss +1 Transp', marker='s', linestyle='--')
+    plt.plot(train_losses, label='Training Loss Augm', marker='o', linestyle='-')
+    plt.plot(val_losses, label='Validation Loss Augm', marker='s', linestyle='--')
     plt.plot(train_losses_f, label='Training Loss FPN', marker='^', linestyle='-')
     plt.plot(val_losses_f, label='Validation Loss FPN', marker='d', linestyle='--')
 

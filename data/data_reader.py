@@ -14,7 +14,6 @@ from misc.config import Params
 def make_dataloaders(params: Params):
     if params.issia_path is None:
         train_issia_dataset = None
-        train_issia_dataset2 = None
     else:
         train_issia_dataset = create_issia_dataset(params.issia_path, params.issia_train_cameras, mode='train',
                                                    only_ball_frames=False)
@@ -26,7 +25,6 @@ def make_dataloaders(params: Params):
 
     if params.spd_set is None:
         train_spd_dataset = None
-        train_spd_dataset2 = None
     else:
         train_spd_dataset = create_spd_dataset(params.spd_path, params.spd_set, mode='train')
 

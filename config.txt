@@ -1,6 +1,6 @@
 [DEFAULT]
 
-checkpoint_path=/Users/sergebishyr/PhD/Courses/PythonProject/FootAndBall/models/model_20250122_1449_checkpoint.pth
+# checkpoint_path=/Users/sergebishyr/PhD/Courses/PythonProject/FootAndBall/models/model_20250122_1449_checkpoint.pth
 
 issia_path=/Users/sergebishyr/PhD/datasets/issia
 issia_train_cameras=1,2,3,4

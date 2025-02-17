@@ -16,7 +16,6 @@ import network.footandball as footandball
 import data.augmentation as augmentations
 from data.augmentation import PLAYER_LABEL, BALL_LABEL
 
-
 def draw_bboxes(image, detections):
     font = cv2.FONT_HERSHEY_SIMPLEX
     for box, label, score in zip(detections['boxes'], detections['labels'], detections['scores']):
@@ -101,7 +100,7 @@ if __name__ == '__main__':
     parser.add_argument('--player_threshold', help='player confidence detection threshold', type=float, default=0.7)
     parser.add_argument('--out_video', help='path to video with detection results', type=str, required=True,
                         default=None)
-    parser.add_argument('--device', help='device (CPU or CUDA)', type=str, default="mps")#default='cuda:0')
+    parser.add_argument('--device', help='device (CPU or CUDA)', type=str, default="cuda:0")#default='cuda:0')
     args = parser.parse_args()
 
     print('Video path: {}'.format(args.path))
