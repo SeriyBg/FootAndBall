@@ -8,7 +8,7 @@ import torch.nn as nn
 import network.fpn as fpn
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
-from network.ball_classifier import BallClassifierRNN
+from network.rnn_classifier import ClassifierRNN
 
 
 # Get ranges of cells to mark with ground truth location
@@ -269,8 +269,13 @@ class FootAndBall(nn.Module):
         assert x[1].shape[3] == width // self.player_downsampling_factor
 
         ball_feature_map, self.h_ball = self.ball_classifier(x[0], getattr(self, 'h_ball', None))
-        player_feature_map = self.player_classifier(x[1])
-        player_bbox = self.player_regressor(x[1])
+        self.h_ball = self.h_ball.detach()
+
+        player_feature_map, self.h_player = self.player_classifier(x[1], getattr(self, 'h_player', None))
+        self.h_player = self.h_player.detach()
+
+        player_bbox, self.h_player_regressor = self.player_regressor(x[1], getattr(self, 'h_player_regressor', None))
+        self.h_player_regressor = self.h_player_regressor.detach()
 
         if self.phase == 'eval' or self.phase == 'detect':
             # In eval and detect mode, convert logits to normalized confidence in [0..1] range
@@ -337,16 +342,18 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     i_channels = 32
 
     base_net = fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
-    ball_classifier = BallClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
+    ball_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
     # ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
     #                                 nn.ReLU(inplace=True),
     #                                 nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
-    player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
-                                      nn.ReLU(inplace=True),
-                                      nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
-    player_regressor = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
-                                     nn.ReLU(inplace=True),
-                                     nn.Conv2d(i_channels, out_channels=4, kernel_size=3, padding=1))
+    player_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
+    # player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+    #                                   nn.ReLU(inplace=True),
+    #                                   nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    player_regressor = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=4)
+    # player_regressor = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+    #                                  nn.ReLU(inplace=True),
+    #                                  nn.Conv2d(i_channels, out_channels=4, kernel_size=3, padding=1))
     detector = FootAndBall(phase, base_net, player_regressor=player_regressor, player_classifier=player_classifier,
                            ball_classifier=ball_classifier, ball_threshold=ball_threshold,
                            player_threshold=player_threshold, max_ball_detections=max_ball_detections,
