@@ -397,8 +397,8 @@ def evaluate_ball_detection_results(annotations, gt_annotations, tolerance):
 
     frame_stats = []
 
-    start_frame = min(gt_annotations.ball_pos)
-    end_frame = max(gt_annotations.ball_pos)
+    start_frame = min(min(gt_annotations.ball_pos), min(annotations.ball_pos))
+    end_frame = max(max(gt_annotations.ball_pos), max(annotations.ball_pos))
 
     for i in range(start_frame, end_frame):
         ball_pos = annotations.ball_pos[i]

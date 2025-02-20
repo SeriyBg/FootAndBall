@@ -58,3 +58,24 @@ class ClassifierRNN(nn.Module):
         return torch.cat(outputs, dim=0), h_prev  # Return batch of predictions
 
 
+class CombinedClassifier(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim=2, kernel_size=3):
+        super(CombinedClassifier, self).__init__()
+
+        # CNN feature extractor
+        self.feature_extractor = nn.Sequential(
+            nn.Conv2d(input_dim, hidden_dim, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, padding=1)
+        )
+
+        # RNN for temporal processing
+        self.rnn = ClassifierRNN(hidden_dim, hidden_dim, output_dim, kernel_size)
+
+    def forward(self, x, h_prev=None):
+        x = self.feature_extractor(x)  # CNN extracts spatial features first
+        out, h_next = self.rnn(x, h_prev)  # RNN processes refined features
+
+        return out, h_next  # Return classification output and updated hidden state
+
+
