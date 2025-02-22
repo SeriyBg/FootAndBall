@@ -69,7 +69,7 @@ class IssiaDataset(torch.utils.data.Dataset):
                 if os.path.exists(file_path):
                     self.image_list.append((file_path, camera_id, e))
 
-        self.n_images = len(self.image_list) * 2
+        self.n_images = len(self.image_list)
         self.ball_images_ndx = set(self.get_elems_with_ball())
         self.no_ball_images_ndx = set([ndx for ndx in range(self.n_images) if ndx not in self.ball_images_ndx])
         print('ISSIA CNR: {} frames with the ball'.format(len(self.ball_images_ndx)))
