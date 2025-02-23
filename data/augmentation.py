@@ -318,8 +318,9 @@ class TrainAugmentation(object):
         self.augment = transforms.Compose([
             ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
             RandomAffine(degrees=5, scale=(0.8, 1.2), p_hflip=0.0),
-            RandomCrop(self.size),
-            RandomHorizontalFlip(p = 0.5),
+            CenterCrop(self.size),
+            # RandomAffine(degrees=5, scale=(0.8, 1.2), p_hflip=0.5),
+            # RandomCrop(self.size),
             ToTensorAndNormalize()
         ])
 
@@ -332,7 +333,8 @@ class TrainAugmentation2(object):
         self.augment = transforms.Compose([
             ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
             RandomAffine(degrees=5, scale=(0.8, 1.2), p_hflip=1.0),
-            RandomCrop(self.size),
+            CenterCrop(self.size),
+            # RandomCrop(self.size),
             ToTensorAndNormalize()
         ])
 
