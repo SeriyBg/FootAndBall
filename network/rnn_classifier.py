@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -46,16 +47,20 @@ class ClassifierRNN(nn.Module):
         x: Shape (batch_size, channels, height, width)
         h_prev: Hidden state from the last batch
         """
-        batch_size, _, H, W = x.shape  # Get batch size
-        outputs = []
+        batch_size, dims, H, W = x.shape  # Get batch size
+        # outputs = []
+        hidden_states = []
 
         for t in range(batch_size):  # Treat batch as sequence
             x_t = x[t:t + 1, :, :, :]  # Select single frame
             h_prev = self.conv_rnn(x_t, h_prev)  # Update hidden state
-            out = self.classifier(h_prev)  # Predict ball presence
-            outputs.append(out)
+            hidden_states.append(h_prev)
+            # out = self.classifier(h_prev)  # Predict ball presence
 
-        return torch.cat(outputs, dim=0), h_prev  # Return batch of predictions
+        h_batch = torch.cat(hidden_states, dim=0)
+        outputs = self.classifier(h_batch)  # Predict ball presence
+
+        return outputs, h_prev  # Return batch of predictions
 
 
 class CombinedClassifier(nn.Module):

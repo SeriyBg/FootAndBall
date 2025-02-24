@@ -133,7 +133,7 @@ def create_issia_dataset(dataset_path, cameras, mode, only_ball_frames=False):
     assert mode == 'train' or mode == 'val'
     assert os.path.exists(dataset_path), 'Cannot find dataset: ' + str(dataset_path)
 
-    train_image_size = (1080, 1920)
+    train_image_size = (720, 1280)
     val_image_size = (1080, 1920)
     if mode == 'train':
         transform = augmentation.TrainAugmentation(size=train_image_size)
