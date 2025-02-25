@@ -16,7 +16,7 @@ from torch.utils.data import Sampler
 
 class IssiaDataset(torch.utils.data.Dataset):
     # Read images from the ISSIA dataset
-    def __init__(self, dataset_path, cameras, transform, transform2, only_ball_frames=False):
+    def __init__(self, dataset_path, cameras, transform, transform2=None, only_ball_frames=False):
         """
         Args:
             root_dir: Directory with all the images
@@ -70,7 +70,10 @@ class IssiaDataset(torch.utils.data.Dataset):
                 if os.path.exists(file_path):
                     self.image_list.append((file_path, camera_id, e))
 
-        self.n_images = len(self.image_list) * 2
+        if not transform2 is None:
+            self.n_images = len(self.image_list) * 2
+        else:
+            self.n_images = len(self.image_list)
         self.ball_images_ndx = set(self.get_elems_with_ball())
         self.no_ball_images_ndx = set([ndx for ndx in range(self.n_images) if ndx not in self.ball_images_ndx])
         print('ISSIA CNR: {} frames with the ball'.format(len(self.ball_images_ndx)))
@@ -140,7 +143,7 @@ def create_issia_dataset(dataset_path, cameras, mode, only_ball_frames=False):
         transform2 = augmentation.TrainAugmentation2(size=train_image_size)
     elif mode == 'val':
         transform = augmentation.NoAugmentation(size=val_image_size)
-        transform2 = augmentation.NoAugmentation(size=val_image_size)
+        transform2 = None
 
     dataset = IssiaDataset(dataset_path, cameras, transform, transform2, only_ball_frames=only_ball_frames)
     return dataset
