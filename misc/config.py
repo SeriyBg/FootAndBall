@@ -43,6 +43,8 @@ class Params:
 
         self.checkpoint_path = params.get('checkpoint_path', None)
 
+        self.pretrained_weights = params.get('pretrained_weights', None)
+
         self._check_params()
 
     def _check_params(self):

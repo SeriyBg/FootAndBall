@@ -135,7 +135,8 @@ def train(params: Params):
     device = "cuda" if torch.cuda.is_available() else 'cpu'
     # if torch.mps.device_count() > 0:
     #     device = "mps"
-    model = footandball.model_factory(params.model, 'train')
+
+    model = footandball.model_factory(params.model, 'train', weights_path=params.pretrained_weights)
     model.print_summary(show_architecture=True)
     model = model.to(device)
 

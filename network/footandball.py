@@ -377,7 +377,7 @@ def freeze_model(model):
 
 
 def model_factory(model_name, phase, max_player_detections=100, max_ball_detections=100, player_threshold=0.0,
-                  ball_threshold=0.0):
+                  ball_threshold=0.0, weights_path=None):
     if model_name == 'fb1':
         model_fn = build_footandball_detector1
     else:
@@ -386,6 +386,19 @@ def model_factory(model_name, phase, max_player_detections=100, max_ball_detecti
 
     return model_fn(phase, ball_threshold=ball_threshold, player_threshold=player_threshold,
                     max_ball_detections=max_ball_detections, max_player_detections=max_player_detections)
+
+
+def preload_parameters(model: nn.Module, weights_path):
+    state_dict = torch.load(weights_path, map_location=lambda storage, loc: storage)
+    state_dict["ball_classifier.ball_classifier.0.weight"] = state_dict["ball_classifier.0.weight"]
+    state_dict["ball_classifier.ball_classifier.0.bias"] = state_dict["ball_classifier.0.bias"]
+    state_dict["ball_classifier.ball_classifier.2.weight"] = state_dict["ball_classifier.2.weight"]
+    state_dict["ball_classifier.ball_classifier.2.bias"] = state_dict["ball_classifier.2.bias"]
+    del state_dict["ball_classifier.0.bias"]
+    del state_dict["ball_classifier.0.weight"]
+    del state_dict["ball_classifier.2.weight"]
+    del state_dict["ball_classifier.2.bias"]
+    model.load_state_dict(state_dict, strict=False)
 
 
 if __name__ == '__main__':

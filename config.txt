@@ -1,15 +1,19 @@
 [DEFAULT]
 
 # checkpoint_path=/Users/sergebishyr/PhD/Courses/PythonProject/FootAndBall/models/model_20250122_1449_checkpoint.pth
+pretrained_weights=models/model_20201019_1416_final.pth
 
 issia_path=/Users/sergebishyr/PhD/datasets/issia
 issia_train_cameras=1,2,3,4
 issia_val_cameras=5,6
 
-spd_path=/Users/sergebishyr/PhD/datasets/SoccerPlayerDetection_bmvc17_v1
-spd_set=1,2
+#spd_path=/Users/sergebishyr/PhD/datasets/SoccerPlayerDetection_bmvc17_v1
+#spd_set=1,2
 
-epochs=15
+sportsmot_path=/Users/sergebishyr/PhD/datasets/sportsmot_publish
+sportsmot_splits=football
+
+epochs=5
 lr=1e-3
 batch_size=12
 num_workers=8
