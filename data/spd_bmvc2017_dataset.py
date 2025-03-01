@@ -85,14 +85,12 @@ def create_spd_dataset(dataset_path, ids, mode):
     image_size = (720, 1280)
     if mode == 'train':
         transform = augmentation.TrainAugmentation(size=image_size)
-        transform2 = augmentation.TrainAugmentation2(size=image_size)
     elif mode == 'val':
         transform = augmentation.NoAugmentation(size=image_size)
 
     ds_l = []
     for ndx in ids:
         ds_l.append(SpdDataset(dataset_path, ndx, transform))
-        ds_l.append(SpdDataset(dataset_path, ndx, transform2))
 
     dataset = torch.utils.data.ConcatDataset(ds_l)
     return dataset

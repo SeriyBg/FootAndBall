@@ -268,6 +268,7 @@ class FootAndBall(nn.Module):
         assert x[1].shape[2] == height // self.player_downsampling_factor
         assert x[1].shape[3] == width // self.player_downsampling_factor
 
+        # ball_feature_map = self.ball_classifier(x[0])
         ball_feature_map, self.h_ball = self.ball_classifier(x[0], getattr(self, 'h_ball', None))
         self.h_ball = self.h_ball.detach()
 
@@ -344,23 +345,35 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     i_channels = 32
 
     base_net = fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
-    ball_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
-    # ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
-    #                                 nn.ReLU(inplace=True),
-    #                                 nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    freeze_model(base_net.layers)
+    freeze_model(base_net.lateral_layers)
+    #ball_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
+    ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+                                    nn.ReLU(inplace=True),
+                                    nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    freeze_model(ball_classifier)
+    ball_classifier = ClassifierRNN(ball_classifier, hidden_dim=i_channels, output_dim=2)
+
     # player_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
     player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
                                       nn.ReLU(inplace=True),
                                       nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    freeze_model(player_classifier)
     # player_regressor = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=4)
     player_regressor = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
                                      nn.ReLU(inplace=True),
                                      nn.Conv2d(i_channels, out_channels=4, kernel_size=3, padding=1))
+    freeze_model(player_regressor)
     detector = FootAndBall(phase, base_net, player_regressor=player_regressor, player_classifier=player_classifier,
                            ball_classifier=ball_classifier, ball_threshold=ball_threshold,
                            player_threshold=player_threshold, max_ball_detections=max_ball_detections,
                            max_player_detections=max_player_detections)
     return detector
+
+
+def freeze_model(model):
+    for param in model.parameters():
+        param.requires_grad = False
 
 
 def model_factory(model_name, phase, max_player_detections=100, max_ball_detections=100, player_threshold=0.0,

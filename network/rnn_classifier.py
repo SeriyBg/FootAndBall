@@ -42,33 +42,30 @@ class ConvRNNCell(nn.Module):
 
 
 class ClassifierRNN(nn.Module):
-    """ Ball classifier with simple ConvRNN for temporal consistency. """
+    """ Ball classifier with frozen CNN and trainable ConvRNN """
 
-    def __init__(self, input_dim, hidden_dim, output_dim=2, kernel_size=3):
+    def __init__(self, ball_classifier, hidden_dim, output_dim=2, kernel_size=3):
         super(ClassifierRNN, self).__init__()
         self.hidden_dim = hidden_dim
-        self.conv_rnn = ConvRNNCell(input_dim, hidden_dim, kernel_size)
+        self.ball_classifier = ball_classifier  # Frozen CNN
+        self.conv_rnn = ConvRNNCell(output_dim, hidden_dim, kernel_size)
         self.classifier = nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1)
 
     def forward(self, x, h_prev=None):
-        """
-        x: Shape (batch_size, channels, height, width)
-        h_prev: Hidden state from the last batch
-        """
-        batch_size, dims, H, W = x.shape  # Get batch size
-        # outputs = []
-        hidden_states = []
+        """ Forward pass with frozen CNN and trainable RNN """
+        with torch.no_grad():
+            x = self.ball_classifier(x)  # Pass through frozen CNN
 
-        for t in range(batch_size):  # Treat batch as sequence
-            x_t = x[t:t + 1, :, :, :]  # Select single frame
+        batch_size, _, H, W = x.shape
+        outputs = []
+
+        for t in range(batch_size):
+            x_t = x[t:t + 1, :, :, :]  # Process one frame at a time
             h_prev = self.conv_rnn(x_t, h_prev)  # Update hidden state
-            hidden_states.append(h_prev)
-            # out = self.classifier(h_prev)  # Predict ball presence
+            outputs.append(h_prev)
 
-        h_batch = torch.cat(hidden_states, dim=0)
-        outputs = self.classifier(h_batch)  # Predict ball presence
-
-        return outputs, h_prev  # Return batch of predictions
+        out = self.classifier(torch.cat(outputs, dim=0))  # Process all frames at once
+        return out, h_prev
 
 
 class CombinedClassifier(nn.Module):

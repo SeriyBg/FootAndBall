@@ -28,6 +28,11 @@ class Params:
             temp = params.get('spd_set', '1, 2')
             self.spd_set = [int(e) for e in temp.split(',')]
 
+        self.sportsmot_path = params.get('sportsmot_path', None)
+        if self.sportsmot_path is not None:
+            temp = params.get('sportsmot_splits', 'football')
+            self.sportsmot_splits = [e for e in temp.split(',')]
+
         self.num_workers = params.getint('num_workers', 0)
         self.batch_size = params.getint('batch_size', 4)
         self.epochs = params.getint('epochs', 20)
