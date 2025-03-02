@@ -101,7 +101,7 @@ def train_model(model, optimizer, scheduler, num_epochs, dataloaders, device, mo
                            avg_batch_stats['loss_player_c'], avg_batch_stats['loss_player_l']))
 
         # Scheduler step
-        scheduler.step()
+        scheduler.step(avg_batch_stats['loss_ball_c'])
         print('')
 
     model_filepath = os.path.join(MODEL_FOLDER, model_name + '_final' + '.pth')
@@ -133,8 +133,8 @@ def train(params: Params):
 
     # Create model
     device = "cuda" if torch.cuda.is_available() else 'cpu'
-    # if torch.mps.device_count() > 0:
-    #     device = "mps"
+    if torch.mps.device_count() > 0:
+        device = "mps"
 
     model = footandball.model_factory(params.model, 'train', weights_path=params.pretrained_weights)
     model.print_summary(show_architecture=True)

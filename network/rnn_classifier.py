@@ -16,11 +16,11 @@ class ConvRNNCell(nn.Module):
         # Convolution to combine input and hidden state
         self.conv = nn.Conv2d(input_dim + hidden_dim, hidden_dim, kernel_size=kernel_size, padding=self.padding)
 
-        # Normalizes across channels
-        self.norm = nn.GroupNorm(num_groups=hidden_dim // 4, num_channels=hidden_dim)  # 4 channels per group
-
-        # Prevent overfitting with Dropout
-        self.dropout = nn.Dropout(p=dropout_prob)
+        # # Normalizes across channels
+        # self.norm = nn.GroupNorm(num_groups=hidden_dim // 4, num_channels=hidden_dim)  # 4 channels per group
+        #
+        # # Prevent overfitting with Dropout
+        # self.dropout = nn.Dropout(p=dropout_prob)
 
     def forward(self, x, h_prev):
         batch_size, _, H, W = x.shape  # Get current batch size
@@ -35,8 +35,8 @@ class ConvRNNCell(nn.Module):
         # Concatenate along channels (dim=1), batch size is now guaranteed to match
         combined = torch.cat([x, h_prev], dim=1)
         h_next = F.tanh(self.conv(combined))  # Apply convolution and activation
-        h_next = self.norm(h_next)
-        h_next = self.dropout(h_next)
+        # h_next = self.norm(h_next)
+        # h_next = self.dropout(h_next)
 
         return h_next
 
