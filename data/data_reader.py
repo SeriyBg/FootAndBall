@@ -30,7 +30,7 @@ def make_dataloaders(params: Params):
 
     dataloaders = {}
     if val_issia_dataset is not None:
-        dataloaders['val'] = DataLoader(val_issia_dataset, batch_size=2, num_workers=params.num_workers,
+        dataloaders['val'] = DataLoader(val_issia_dataset, batch_size=params.batch_size, num_workers=params.num_workers,
                                         pin_memory=True, collate_fn=my_collate)
 
     if train_spd_dataset is None:
