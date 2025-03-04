@@ -112,7 +112,7 @@ class RandomAffineBatch:
 
 
         if isinstance(image, torch.Tensor):
-            image = tensor2image(image)
+            # image = tensor2image(image)
             image = F.to_pil_image(image)
 
         center = (width * 0.5 + 0.5, height * 0.5 + 0.5)
@@ -162,7 +162,7 @@ class RandomCropBatch:
         image, boxes, labels = sample
 
         if isinstance(image, torch.Tensor):
-            image = tensor2image(image)
+            # image = tensor2image(image)
             image = F.to_pil_image(image)
 
         image = F.crop(image, i, j, self.out_h, self.out_w)
