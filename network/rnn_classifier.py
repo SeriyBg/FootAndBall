@@ -51,7 +51,8 @@ class ClassifierRNN(nn.Module):
         self.conv_rnn = ConvRNNCell(output_dim, hidden_dim, kernel_size)
         self.classifier = nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1)
 
-    def forward(self, x, h_prev=None):
+    # def forward(self, x, h_prev=None):
+    def forward(self, x):
         """ Forward pass with frozen CNN and trainable RNN """
         with torch.no_grad():
             x = self.ball_classifier(x)  # Pass through frozen CNN
@@ -59,13 +60,15 @@ class ClassifierRNN(nn.Module):
         batch_size, _, H, W = x.shape
         outputs = []
 
+        h_prev = None
         for t in range(batch_size):
             x_t = x[t:t + 1, :, :, :]  # Process one frame at a time
             h_prev = self.conv_rnn(x_t, h_prev)  # Update hidden state
             outputs.append(h_prev)
 
         out = self.classifier(torch.cat(outputs, dim=0))  # Process all frames at once
-        return out, h_prev
+        # return out, h_prev
+        return out
 
 
 class CombinedClassifier(nn.Module):

@@ -268,9 +268,9 @@ class FootAndBall(nn.Module):
         assert x[1].shape[2] == height // self.player_downsampling_factor
         assert x[1].shape[3] == width // self.player_downsampling_factor
 
-        # ball_feature_map = self.ball_classifier(x[0])
-        ball_feature_map, self.h_ball = self.ball_classifier(x[0], getattr(self, 'h_ball', None))
-        self.h_ball = self.h_ball.detach()
+        ball_feature_map = self.ball_classifier(x[0])
+        # ball_feature_map, self.h_ball = self.ball_classifier(x[0], getattr(self, 'h_ball', None))
+        # self.h_ball = self.h_ball.detach()
 
         player_feature_map = self.player_classifier(x[1])
         # player_feature_map, self.h_player = self.player_classifier(x[1], getattr(self, 'h_player', None))

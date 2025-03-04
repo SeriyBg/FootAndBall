@@ -2,11 +2,14 @@
 # Jacek Komorowski, Grzegorz Kurzejamski, Grzegorz Sarwas
 # Copyright (c) 2020 Sport Algorithmics and Gaming
 
+import numpy as np
 import random
 import torch
+from matplotlib import pyplot as plt
 from torch.utils.data import Sampler, DataLoader, ConcatDataset
 
-from data.issia_dataset import create_issia_dataset, IssiaDataset
+from data.batch_augmentation import RandomAffineBatch, RandomCropBatch
+from data.issia_dataset2 import create_issia_dataset, IssiaDataset
 from data.spd_bmvc2017_dataset import create_spd_dataset
 from misc.config import Params
 
@@ -42,17 +45,80 @@ def make_dataloaders(params: Params):
                                       #sampler=batch_sampler,
                                       shuffle=False,
                                       batch_size=params.batch_size,
-                                      num_workers=params.num_workers, pin_memory=True, collate_fn=my_collate)
+                                      num_workers=params.num_workers, pin_memory=True, collate_fn=transform_collate)
 
     return dataloaders
 
 
 def my_collate(batch):
     images = torch.stack([e[0] for e in batch], dim=0)
+    older_images = images
     boxes = [e[1] for e in batch]
     labels = [e[2] for e in batch]
+    # visualize_batch(older_images, images)
     return images, boxes, labels
 
+
+def transform_collate(batch):
+
+    images, boxes, labels = zip(*batch)
+    old_images = images
+
+    # Get image dimensions (assuming all images have the same size)
+    height, width = images[0].shape[1], images[0].shape[2]
+
+    # Initialize the affine transformation **once per batch**
+    random_affine = RandomAffineBatch(degrees=5, scale=(0.8, 1.2), p_hflip=0.0)
+    angle, translate, scale, shear = random_affine.get_params(height, width)
+
+    # Apply the same transformation to all images in the batch
+    transformed_batch = [random_affine((img, b, l), angle, translate, scale, shear) for img, b, l in batch]
+
+    # Initialize the affine transformation **once per batch**
+    train_image_size = (720, 1280)
+    random_crop = RandomCropBatch(train_image_size)
+    i, j = random_crop.get_params(height, width)
+
+    # Apply the same transformation to all images in the batch
+    transformed_batch = [random_crop((img, b, l), i, j) for img, b, l in transformed_batch]
+
+    # Unpack transformed images, boxes, and labels
+    images, boxes, labels = zip(*transformed_batch)
+
+    # Convert back to the correct format
+    images = torch.stack(images, dim=0)  # Stack transformed images into a single tensor
+    boxes = [torch.as_tensor(b, dtype=torch.float32) for b in boxes]
+    labels = [torch.as_tensor(l, dtype=torch.int64) for l in labels]
+
+    # visualize_batch(old_images, images)
+
+    return images, boxes, labels
+
+
+def visualize_batch(old_images, images):
+    batch_size = len(old_images)
+    fig, axes = plt.subplots(2, batch_size, figsize=(batch_size * 3, 6))
+
+    if batch_size == 1:  # Ensure iterable for single image batch
+        axes = [[axes[0]], [axes[1]]]
+
+    for i in range(batch_size):
+        # Convert tensors to NumPy arrays for visualization
+        old_img_np = old_images[i].permute(1, 2, 0).cpu().numpy()
+        new_img_np = images[i].permute(1, 2, 0).cpu().numpy()
+
+        # Top row: Original images
+        axes[0][i].imshow(old_img_np)
+        axes[0][i].axis("off")
+        axes[0][i].set_title(f"O{i}")
+
+        # Bottom row: Transformed images
+        axes[1][i].imshow(new_img_np)
+        axes[1][i].axis("off")
+        axes[1][i].set_title(f"T{i}")
+
+    plt.tight_layout()
+    plt.show()
 
 class BalancedSampler(Sampler):
     # Sampler sampling the same number of frames with and without the ball

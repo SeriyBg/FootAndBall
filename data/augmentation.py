@@ -1,7 +1,6 @@
 # FootAndBall: Integrated Player and Ball Detector
 # Jacek Komorowski, Grzegorz Kurzejamski, Grzegorz Sarwas
 # Copyright (c) 2020 Sport Algorithmics and Gaming
-
 from PIL import Image
 import numpy as np
 import numbers
@@ -10,6 +9,7 @@ import cv2
 
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
+from PIL.ImageTransform import AffineTransform
 
 # Labels starting from 0
 BALL_LABEL = 1
@@ -317,7 +317,6 @@ class TrainAugmentation(object):
         self.size = size
         self.augment = transforms.Compose([
             ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
-            # CenterCrop(self.size),
             RandomAffine(degrees=5, scale=(0.8, 1.2), p_hflip=0.5),
             RandomCrop(self.size),
             ToTensorAndNormalize()
@@ -331,10 +330,18 @@ class TrainAugmentation2(object):
         self.size = size
         self.augment = transforms.Compose([
             ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
-            # RandomAffine(degrees=5, scale=(0.8, 1.2), p_hflip=1.0),
-            CenterCrop(self.size),
+            ToTensorAndNormalize()
+        ])
+
+    def __call__(self, sample):
+        return self.augment(sample)
+
+class TrainAugmentation3(object):
+    def __init__(self, size):
+        self.size = size
+        self.augment = transforms.Compose([
+            ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
             RandomHorizontalFlip(p=1.0),
-            # RandomCrop(self.size),
             ToTensorAndNormalize()
         ])
 
