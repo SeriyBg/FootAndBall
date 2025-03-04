@@ -4,7 +4,8 @@ import numpy as np
 import numbers
 import random
 
-from data.augmentation import apply_transform_and_clip, image2tensor, numpy2tensor, tensor2image, clip
+from data.augmentation import apply_transform_and_clip, image2tensor, numpy2tensor, tensor2image, clip, \
+    denormalize_trans
 import torchvision.transforms.functional as F
 
 
@@ -113,6 +114,7 @@ class RandomAffineBatch:
 
         if isinstance(image, torch.Tensor):
             # image = tensor2image(image)
+            image = denormalize_trans(image)
             image = F.to_pil_image(image)
 
         center = (width * 0.5 + 0.5, height * 0.5 + 0.5)
@@ -163,6 +165,7 @@ class RandomCropBatch:
 
         if isinstance(image, torch.Tensor):
             # image = tensor2image(image)
+            image = denormalize_trans(image)
             image = F.to_pil_image(image)
 
         image = F.crop(image, i, j, self.out_h, self.out_w)
