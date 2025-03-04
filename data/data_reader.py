@@ -5,7 +5,7 @@
 import numpy as np
 import random
 import torch
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from torch.utils.data import Sampler, DataLoader, ConcatDataset
 
 from data.batch_augmentation import RandomAffineBatch, RandomCropBatch
@@ -95,30 +95,30 @@ def transform_collate(batch):
     return images, boxes, labels
 
 
-def visualize_batch(old_images, images):
-    batch_size = len(old_images)
-    fig, axes = plt.subplots(2, batch_size, figsize=(batch_size * 3, 6))
-
-    if batch_size == 1:  # Ensure iterable for single image batch
-        axes = [[axes[0]], [axes[1]]]
-
-    for i in range(batch_size):
-        # Convert tensors to NumPy arrays for visualization
-        old_img_np = old_images[i].permute(1, 2, 0).cpu().numpy()
-        new_img_np = images[i].permute(1, 2, 0).cpu().numpy()
-
-        # Top row: Original images
-        axes[0][i].imshow(old_img_np)
-        axes[0][i].axis("off")
-        axes[0][i].set_title(f"O{i}")
-
-        # Bottom row: Transformed images
-        axes[1][i].imshow(new_img_np)
-        axes[1][i].axis("off")
-        axes[1][i].set_title(f"T{i}")
-
-    plt.tight_layout()
-    plt.show()
+# def visualize_batch(old_images, images):
+#     batch_size = len(old_images)
+#     fig, axes = plt.subplots(2, batch_size, figsize=(batch_size * 3, 6))
+#
+#     if batch_size == 1:  # Ensure iterable for single image batch
+#         axes = [[axes[0]], [axes[1]]]
+#
+#     for i in range(batch_size):
+#         # Convert tensors to NumPy arrays for visualization
+#         old_img_np = old_images[i].permute(1, 2, 0).cpu().numpy()
+#         new_img_np = images[i].permute(1, 2, 0).cpu().numpy()
+#
+#         # Top row: Original images
+#         axes[0][i].imshow(old_img_np)
+#         axes[0][i].axis("off")
+#         axes[0][i].set_title(f"O{i}")
+#
+#         # Bottom row: Transformed images
+#         axes[1][i].imshow(new_img_np)
+#         axes[1][i].axis("off")
+#         axes[1][i].set_title(f"T{i}")
+#
+#     plt.tight_layout()
+#     plt.show()
 
 class BalancedSampler(Sampler):
     # Sampler sampling the same number of frames with and without the ball
