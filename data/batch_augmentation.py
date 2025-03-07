@@ -2,8 +2,6 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as F
 
-from data.augmentation import apply_transform_and_clip
-
 
 def apply_affine_to_tensor(image, boxes, labels, angle, translate, scale, shear, img_shape):
     """
@@ -20,7 +18,7 @@ def apply_affine_to_tensor(image, boxes, labels, angle, translate, scale, shear,
     inverse_affine_matrix = torch.tensor(affine_matrix).reshape(2, 3)
 
     # Apply transformation to bounding boxes
-    boxes, labels = apply_transform_and_clip(boxes, labels, inverse_affine_matrix.numpy(), (width, height))
+    boxes, labels = apply_transform_and_clip(boxes, labels, inverse_affine_matrix, (width, height))
     if isinstance(boxes, np.ndarray):
         boxes = torch.tensor(boxes, dtype=torch.float32)
 
@@ -28,6 +26,38 @@ def apply_affine_to_tensor(image, boxes, labels, angle, translate, scale, shear,
         labels = torch.tensor(labels, dtype=torch.int64)
 
     return image, boxes, labels
+
+
+def apply_transform_and_clip(boxes, labels, M, shape):
+    """
+    Apply an affine transformation to bounding boxes and filter out boxes that fall outside image boundaries.
+
+    :param boxes: Tensor of shape (N, 4) with (x1, y1, x2, y2) coordinates.
+    :param labels: Tensor of shape (N,) with class labels.
+    :param M: Affine transformation matrix of shape (3, 3).
+    :param shape: (width, height) tuple defining the image size.
+    :return: Filtered transformed boxes and corresponding labels.
+    """
+    assert len(boxes) == len(labels)
+
+    # Add ones for affine transformation
+    ones = torch.ones((len(boxes), 1), device=boxes.device)
+    ext_pts1 = torch.cat((boxes[:, :2], ones), dim=1).T  # Upper-left corner
+    ext_pts2 = torch.cat((boxes[:, 2:4], ones), dim=1).T  # Lower-right corner
+
+    # Apply affine transformation
+    transformed_pts1 = torch.mm(M[:2], ext_pts1).T
+    transformed_pts2 = torch.mm(M[:2], ext_pts2).T
+
+    # Determine min/max coordinates after transformation
+    transformed_boxes = torch.zeros_like(boxes)
+    transformed_boxes[:, 0] = torch.min(transformed_pts1[:, 0], transformed_pts2[:, 0])
+    transformed_boxes[:, 1] = torch.min(transformed_pts1[:, 1], transformed_pts2[:, 1])
+    transformed_boxes[:, 2] = torch.max(transformed_pts1[:, 0], transformed_pts2[:, 0])
+    transformed_boxes[:, 3] = torch.max(transformed_pts1[:, 1], transformed_pts2[:, 1])
+
+    # Use your filtering-only `clip` function
+    return clip(transformed_boxes, labels, shape)
 
 
 def clip(boxes, labels, shape):

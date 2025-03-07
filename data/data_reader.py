@@ -5,7 +5,7 @@
 import random
 
 import torch
-#from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 from torch.utils.data import Sampler, DataLoader, ConcatDataset
 
 import data.augmentation as augmentation
@@ -44,7 +44,8 @@ def make_dataloaders(params: Params):
                                         pin_memory=True, collate_fn=my_collate)
 
     if train_spd_dataset is None:
-        train_dataset = ConcatDataset([train_issia_dataset, train_issia_dataset2])
+        # train_dataset = ConcatDataset([train_issia_dataset, train_issia_dataset2])
+        train_dataset = ConcatDataset([train_issia_dataset])
     else:
         train_dataset = ConcatDataset([train_issia_dataset, train_spd_dataset])
     batch_sampler = BalancedSampler(train_dataset)
@@ -80,8 +81,6 @@ def transform_collate(batch):
     angle, translate, scale, shear = random_affine.get_params(height, width)
 
     # Apply the same transformation to all images in the batch
-    # transformed_batch = [random_affine((img, b, l), angle, translate, scale, shear) for img, b, l in batch]
-    transformed_batch = [apply_affine_to_tensor(img, b, l, angle, translate, scale, shear, (height, width)) for img, b, l in batch]
 
     # Initialize the affine transformation **once per batch**
     train_image_size = (720, 1280)
@@ -89,45 +88,51 @@ def transform_collate(batch):
     i, j = random_crop.get_params(height, width)
 
     # Apply the same transformation to all images in the batch
-    transformed_batch = [apply_crop_to_tensor(img, b, l, i, j, train_image_size[0], train_image_size[1]) for img, b, l in transformed_batch]
+    transformed_batch = [
+        apply_crop_to_tensor(
+            *apply_affine_to_tensor(img, b, l, angle, translate, scale, shear, (height, width)),
+            i, j, train_image_size[0], train_image_size[1]
+        )
+        for img, b, l in batch
+    ]
 
     # Unpack transformed images, boxes, and labels
     images, boxes, labels = zip(*transformed_batch)
 
     # Convert back to the correct format
     images = torch.stack(images, dim=0)  # Stack transformed images into a single tensor
-    boxes = [torch.as_tensor(b, dtype=torch.float32) for b in boxes]
-    labels = [torch.as_tensor(l, dtype=torch.int64) for l in labels]
+    # boxes = [torch.as_tensor(b, dtype=torch.float32) for b in boxes]
+    # labels = [torch.as_tensor(l, dtype=torch.int64) for l in labels]
 
     # visualize_batch(old_images[:5], images[:5])
 
     return images, boxes, labels
 
 
-# def visualize_batch(old_images, images):
-#     batch_size = len(old_images)
-#     fig, axes = plt.subplots(2, batch_size, figsize=(batch_size * 3, 6))
-#
-#     if batch_size == 1:  # Ensure iterable for single image batch
-#         axes = [[axes[0]], [axes[1]]]
-#
-#     for i in range(batch_size):
-#         # Convert tensors to NumPy arrays for visualization
-#         old_img_np = old_images[i].permute(1, 2, 0).cpu().numpy()
-#         new_img_np = images[i].permute(1, 2, 0).cpu().numpy()
-#
-#         # Top row: Original images
-#         axes[0][i].imshow(old_img_np)
-#         axes[0][i].axis("off")
-#         axes[0][i].set_title(f"O{i}")
-#
-#         # Bottom row: Transformed images
-#         axes[1][i].imshow(new_img_np)
-#         axes[1][i].axis("off")
-#         axes[1][i].set_title(f"T{i}")
-#
-#     plt.tight_layout()
-#     plt.show()
+def visualize_batch(old_images, images):
+    batch_size = len(old_images)
+    fig, axes = plt.subplots(2, batch_size, figsize=(batch_size * 3, 6))
+
+    if batch_size == 1:  # Ensure iterable for single image batch
+        axes = [[axes[0]], [axes[1]]]
+
+    for i in range(batch_size):
+        # Convert tensors to NumPy arrays for visualization
+        old_img_np = old_images[i].permute(1, 2, 0).cpu().numpy()
+        new_img_np = images[i].permute(1, 2, 0).cpu().numpy()
+
+        # Top row: Original images
+        axes[0][i].imshow(old_img_np)
+        axes[0][i].axis("off")
+        axes[0][i].set_title(f"O{i}")
+
+        # Bottom row: Transformed images
+        axes[1][i].imshow(new_img_np)
+        axes[1][i].axis("off")
+        axes[1][i].set_title(f"T{i}")
+
+    plt.tight_layout()
+    plt.show()
 
 class BalancedSampler(Sampler):
     # Sampler sampling the same number of frames with and without the ball
