@@ -16,7 +16,7 @@ from torch.utils.data import Sampler
 
 class IssiaDataset(torch.utils.data.Dataset):
     # Read images from the ISSIA dataset
-    def __init__(self, dataset_path, cameras, transform, transform2=None, only_ball_frames=False):
+    def __init__(self, dataset_path, cameras, transform, only_ball_frames=False):
         """
         Args:
             root_dir: Directory with all the images
@@ -29,7 +29,6 @@ class IssiaDataset(torch.utils.data.Dataset):
         self.dataset_path = dataset_path
         self.cameras = cameras
         self.transform = transform
-        self.transform2 = transform2
         self.only_ball_frames = only_ball_frames
         self.image_extension = '.png'
         # Dictionary with ground truth annotations per camera
@@ -70,10 +69,7 @@ class IssiaDataset(torch.utils.data.Dataset):
                 if os.path.exists(file_path):
                     self.image_list.append((file_path, camera_id, e))
 
-        if not transform2 is None:
-            self.n_images = len(self.image_list) * 2
-        else:
-            self.n_images = len(self.image_list)
+        self.n_images = len(self.image_list)
         self.ball_images_ndx = set(self.get_elems_with_ball())
         self.no_ball_images_ndx = set([ndx for ndx in range(self.n_images) if ndx not in self.ball_images_ndx])
         print('ISSIA CNR: {} frames with the ball'.format(len(self.ball_images_ndx)))
@@ -85,9 +81,6 @@ class IssiaDataset(torch.utils.data.Dataset):
     def __getitem__(self, ndx):
         # Returns transferred image as a normalized tensor
         transform = self.transform
-        if ndx >= len(self.image_list):
-            ndx = ndx - (len(self.image_list))
-            transform = self.transform2
         image_path, camera_id, image_ndx = self.image_list[ndx]
         image = Image.open(image_path)
         boxes, labels = self.get_annotations(camera_id, image_ndx)
@@ -131,7 +124,7 @@ class IssiaDataset(torch.utils.data.Dataset):
         return ball_images_ndx
 
 
-def create_issia_dataset(dataset_path, cameras, mode, only_ball_frames=False):
+def create_issia_dataset(dataset_path, cameras, mode, only_ball_frames=False, train_transform=None):
     # Get ISSIA datasets for multiple cameras
     assert mode == 'train' or mode == 'val'
     assert os.path.exists(dataset_path), 'Cannot find dataset: ' + str(dataset_path)
@@ -139,13 +132,10 @@ def create_issia_dataset(dataset_path, cameras, mode, only_ball_frames=False):
     train_image_size = (720, 1280)
     val_image_size = (1080, 1920)
     if mode == 'train':
-        transform = augmentation.TrainAugmentation2(size=train_image_size)
-        transform2 = augmentation.TrainAugmentation3(size=train_image_size)
-        # transform = augmentation.NoAugmentation(size=train_image_size)
-        # transform2 = augmentation.NoAugmentation(size=train_image_size)
+        assert train_transform is not None
+        transform = train_transform
     elif mode == 'val':
         transform = augmentation.NoAugmentation(size=val_image_size)
-        transform2 = None
 
-    dataset = IssiaDataset(dataset_path, cameras, transform, transform2, only_ball_frames=only_ball_frames)
+    dataset = IssiaDataset(dataset_path, cameras, transform, only_ball_frames=only_ball_frames)
     return dataset

@@ -2,24 +2,31 @@
 # Jacek Komorowski, Grzegorz Kurzejamski, Grzegorz Sarwas
 # Copyright (c) 2020 Sport Algorithmics and Gaming
 
-import numpy as np
 import random
+
 import torch
-# from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 from torch.utils.data import Sampler, DataLoader, ConcatDataset
 
-from data.batch_augmentation import RandomAffineBatch, RandomCropBatch
+import data.augmentation as augmentation
+from data.batch_augmentation import apply_affine_to_tensor, apply_crop_to_tensor
 from data.issia_dataset2 import create_issia_dataset, IssiaDataset
 from data.spd_bmvc2017_dataset import create_spd_dataset
 from misc.config import Params
 
 
+# from memory_profiler import profile
+
+
 def make_dataloaders(params: Params):
     if params.issia_path is None:
         train_issia_dataset = None
+        train_issia_dataset2 = None
     else:
         train_issia_dataset = create_issia_dataset(params.issia_path, params.issia_train_cameras, mode='train',
-                                                   only_ball_frames=False)
+                                                   only_ball_frames=False, train_transform=augmentation.TrainAugmentation2((720, 1280)))
+        train_issia_dataset2 = create_issia_dataset(params.issia_path, params.issia_train_cameras, mode='train',
+                                                   only_ball_frames=False, train_transform=augmentation.TrainAugmentation3((720, 1280)))
         if len(params.issia_val_cameras) == 0:
             val_issia_dataset = None
         else:
@@ -37,7 +44,7 @@ def make_dataloaders(params: Params):
                                         pin_memory=True, collate_fn=my_collate)
 
     if train_spd_dataset is None:
-        train_dataset = ConcatDataset([train_issia_dataset])
+        train_dataset = ConcatDataset([train_issia_dataset, train_issia_dataset2])
     else:
         train_dataset = ConcatDataset([train_issia_dataset, train_spd_dataset])
     batch_sampler = BalancedSampler(train_dataset)
@@ -52,35 +59,37 @@ def make_dataloaders(params: Params):
 
 def my_collate(batch):
     images = torch.stack([e[0] for e in batch], dim=0)
-    older_images = images
+    #older_images = images
     boxes = [e[1] for e in batch]
     labels = [e[2] for e in batch]
     # visualize_batch(older_images, images)
     return images, boxes, labels
 
 
+# @profile
 def transform_collate(batch):
 
     images, boxes, labels = zip(*batch)
-    old_images = images
+    # old_images = images
 
     # Get image dimensions (assuming all images have the same size)
     height, width = images[0].shape[1], images[0].shape[2]
 
     # Initialize the affine transformation **once per batch**
-    random_affine = RandomAffineBatch(degrees=5, scale=(0.8, 1.2), p_hflip=0.0)
+    random_affine = augmentation.RandomAffine(degrees=5, scale=(0.8, 1.2), p_hflip=0.0)
     angle, translate, scale, shear = random_affine.get_params(height, width)
 
     # Apply the same transformation to all images in the batch
-    transformed_batch = [random_affine((img, b, l), angle, translate, scale, shear) for img, b, l in batch]
+    # transformed_batch = [random_affine((img, b, l), angle, translate, scale, shear) for img, b, l in batch]
+    transformed_batch = [apply_affine_to_tensor(img, b, l, angle, translate, scale, shear, (height, width)) for img, b, l in batch]
 
     # Initialize the affine transformation **once per batch**
     train_image_size = (720, 1280)
-    random_crop = RandomCropBatch(train_image_size)
+    random_crop = augmentation.RandomCrop(train_image_size)
     i, j = random_crop.get_params(height, width)
 
     # Apply the same transformation to all images in the batch
-    transformed_batch = [random_crop((img, b, l), i, j) for img, b, l in transformed_batch]
+    transformed_batch = [apply_crop_to_tensor(img, b, l, i, j, train_image_size[0], train_image_size[1]) for img, b, l in transformed_batch]
 
     # Unpack transformed images, boxes, and labels
     images, boxes, labels = zip(*transformed_batch)
@@ -90,7 +99,7 @@ def transform_collate(batch):
     boxes = [torch.as_tensor(b, dtype=torch.float32) for b in boxes]
     labels = [torch.as_tensor(l, dtype=torch.int64) for l in labels]
 
-    # visualize_batch(old_images, images)
+    # visualize_batch(old_images[:5], images[:5])
 
     return images, boxes, labels
 
