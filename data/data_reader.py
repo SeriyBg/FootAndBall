@@ -9,8 +9,10 @@ from matplotlib import pyplot as plt
 from torch.utils.data import Sampler, DataLoader, ConcatDataset
 
 import data.augmentation as augmentation
-from data.batch_augmentation import apply_affine_to_tensor, apply_crop_to_tensor
+from data.batch_augmentation import apply_affine_to_tensor, apply_crop_to_tensor, apply_color_jitter_to_tensor, \
+    apply_all_transformations
 from data.issia_dataset2 import create_issia_dataset, IssiaDataset
+from data.sampler import SlidingWindowSampler
 from data.spd_bmvc2017_dataset import create_spd_dataset
 from misc.config import Params
 
@@ -21,12 +23,9 @@ from misc.config import Params
 def make_dataloaders(params: Params):
     if params.issia_path is None:
         train_issia_dataset = None
-        train_issia_dataset2 = None
     else:
         train_issia_dataset = create_issia_dataset(params.issia_path, params.issia_train_cameras, mode='train',
                                                    only_ball_frames=False, train_transform=augmentation.TrainAugmentation2((720, 1280)))
-        train_issia_dataset2 = create_issia_dataset(params.issia_path, params.issia_train_cameras, mode='train',
-                                                   only_ball_frames=False, train_transform=augmentation.TrainAugmentation3((720, 1280)))
         if len(params.issia_val_cameras) == 0:
             val_issia_dataset = None
         else:
@@ -44,15 +43,16 @@ def make_dataloaders(params: Params):
                                         pin_memory=True, collate_fn=my_collate)
 
     if train_spd_dataset is None:
-        # train_dataset = ConcatDataset([train_issia_dataset, train_issia_dataset2])
         train_dataset = ConcatDataset([train_issia_dataset])
     else:
         train_dataset = ConcatDataset([train_issia_dataset, train_spd_dataset])
     batch_sampler = BalancedSampler(train_dataset)
+    batch_sampler = SlidingWindowSampler(train_dataset, params.batch_size)
     dataloaders['train'] = DataLoader(train_dataset,
-                                      #sampler=batch_sampler,
-                                      shuffle=False,
-                                      batch_size=params.batch_size,
+                                      # sampler=batch_sampler,
+                                      # shuffle=False,
+                                      # batch_size=params.batch_size,
+                                      batch_sampler=batch_sampler,
                                       num_workers=params.num_workers, pin_memory=True, collate_fn=transform_collate)
 
     return dataloaders
@@ -69,42 +69,43 @@ def my_collate(batch):
 
 # @profile
 def transform_collate(batch):
-
     images, boxes, labels = zip(*batch)
-    # old_images = images
+    old_images = images
 
     # Get image dimensions (assuming all images have the same size)
     height, width = images[0].shape[1], images[0].shape[2]
 
     # Initialize the affine transformation **once per batch**
-    random_affine = augmentation.RandomAffine(degrees=5, scale=(0.8, 1.2), p_hflip=0.0)
-    angle, translate, scale, shear = random_affine.get_params(height, width)
-
-    # Apply the same transformation to all images in the batch
+    affine_params = augmentation.RandomAffine(degrees=5, scale=(0.8, 1.2), p_hflip=0.5).get_params(height, width)
+    flip = torch.rand(1).item() < 0.5
 
     # Initialize the affine transformation **once per batch**
     train_image_size = (720, 1280)
-    random_crop = augmentation.RandomCrop(train_image_size)
-    i, j = random_crop.get_params(height, width)
+    crop_params = augmentation.RandomCrop(train_image_size).get_params(height, width)
+
+    # Initialize color jitter transformation **once per batch**
+    brightness_factor = torch.empty(1).uniform_(0.8, 1.2).item()
+    contrast_factor = torch.empty(1).uniform_(0.8, 1.2).item()
+    saturation_factor = torch.empty(1).uniform_(0.8, 1.2).item()
+    hue_factor = torch.empty(1).uniform_(-0.05, 0.05).item()
+    jitter_params = (brightness_factor, contrast_factor, saturation_factor, hue_factor)
 
     # Apply the same transformation to all images in the batch
     transformed_batch = [
-        apply_crop_to_tensor(
-            *apply_affine_to_tensor(img, b, l, angle, translate, scale, shear, (height, width)),
-            i, j, train_image_size[0], train_image_size[1]
-        )
-        for img, b, l in batch
-    ]
+        apply_all_transformations(img, b, l,
+                                  (*affine_params, flip),
+                                  (*crop_params, train_image_size[0], train_image_size[1]),
+                                  jitter_params,
+                                  (height, width))
+        for img, b, l in batch]
 
     # Unpack transformed images, boxes, and labels
     images, boxes, labels = zip(*transformed_batch)
 
-    # Convert back to the correct format
-    images = torch.stack(images, dim=0)  # Stack transformed images into a single tensor
-    # boxes = [torch.as_tensor(b, dtype=torch.float32) for b in boxes]
-    # labels = [torch.as_tensor(l, dtype=torch.int64) for l in labels]
+    # Convert back to the correct format. Stack transformed images into a single tensor
+    images = torch.stack(images, dim=0)
 
-    # visualize_batch(old_images[:5], images[:5])
+    visualize_batch(old_images[:5], images[:5])
 
     return images, boxes, labels
 

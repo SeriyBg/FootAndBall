@@ -1,9 +1,61 @@
 import numpy as np
 import torch
 import torchvision.transforms.functional as F
+import torchvision.transforms._functional_tensor as F_t
+from torchvision.transforms import transforms
+
+from data.augmentation import NORMALIZATION_MEAN, NORMALIZATION_STD
+
+normalize = transforms.Normalize(NORMALIZATION_MEAN, NORMALIZATION_STD)
+
+def apply_all_transformations(image, boxes, labels, affine_params, crop_params, jitter_params, img_shape):
+    """
+    Apply Affine, Crop, and Color Jitter transformations in one step to reduce memory usage.
+    """
+    # Unpack transformation parameters
+    angle, translate, scale, shear, flip = affine_params
+    crop_i, crop_j, crop_h, crop_w = crop_params
+    brightness, contrast, saturation, hue = jitter_params
+
+    height, width = img_shape  # Image dimensions
+
+    ## APPLY AFFINE TRANSFORMATION ##
+    # Apply affine transformation to the image
+    center = (width * 0.5, height * 0.5)
+    image = F.affine(image, angle=angle, translate=translate, scale=scale, shear=shear,
+                     interpolation=F.InterpolationMode.BILINEAR)
+
+    # Compute affine transformation matrix manually for bounding boxes
+    affine_matrix = F._get_inverse_affine_matrix(center, angle, translate, scale, shear)
+    inverse_affine_matrix = torch.tensor(affine_matrix).reshape(2, 3)
+
+    # Apply transformation to bounding boxes
+    boxes, labels = apply_transform_and_clip(boxes, labels, inverse_affine_matrix, (width, height))
+
+    # Apply Horizontal Flip
+    if flip:
+        image = F.hflip(image)
+        boxes[:, [0, 2]] = width - boxes[:, [2, 0]]  # Flip x-coordinates
+
+    ## APPLY CROP ##
+    image = F.crop(image, top=crop_i, left=crop_j, height=crop_h, width=crop_w)
+    boxes[:, :2] -= torch.tensor([crop_j, crop_i], device=boxes.device)  # Adjust top-left
+    boxes[:, 2:4] -= torch.tensor([crop_j, crop_i], device=boxes.device)  # Adjust bottom-right
+    boxes, labels = clip(boxes, labels, (crop_w, crop_h))
+
+    ## APPLY COLOR JITTER ##
+    image = F_t.adjust_brightness(image, brightness)
+    image = F_t.adjust_contrast(image, contrast)
+    image = F_t.adjust_saturation(image, saturation)
+    image = F_t.adjust_hue(image, hue)
+
+    # Normalize after transformations
+    image = normalize(image)
+
+    return image, boxes, labels
 
 
-def apply_affine_to_tensor(image, boxes, labels, angle, translate, scale, shear, img_shape):
+def apply_affine_to_tensor(image, boxes, labels, angle, translate, scale, shear, flip, img_shape):
     """
     Apply affine transformation directly to a tensor image and corresponding bounding boxes.
     """
@@ -24,6 +76,10 @@ def apply_affine_to_tensor(image, boxes, labels, angle, translate, scale, shear,
 
     if isinstance(labels, np.ndarray):
         labels = torch.tensor(labels, dtype=torch.int64)
+
+    if flip:
+        image = F.hflip(image)
+        boxes[:, [0, 2]] = width - boxes[:, [2, 0]]
 
     return image, boxes, labels
 
@@ -97,5 +153,27 @@ def apply_crop_to_tensor(image, boxes, labels, i, j, out_h, out_w):
 
     # Clip boxes to remain inside the cropped region
     boxes, labels = clip(boxes, labels, (out_w, out_h))
+
+    return image, boxes, labels
+
+
+def apply_color_jitter_to_tensor(image, boxes, labels, brightness_factor=0, contrast_factor=0, saturation_factor=0, hue_factor=0):
+    """
+    Apply ColorJitter transformation (brightness, contrast, saturation, hue) to a tensor image.
+
+    :param image: Tensor of shape (C, H, W)
+    :param brightness_factor: Brightness factor (0 gives a black image, 1 gives the original, >1 brightens)
+    :param contrast_factor: Contrast factor (0 gives a solid gray image, 1 gives the original, >1 increases contrast)
+    :param saturation_factor: Saturation factor (0 removes color, 1 is the original, >1 increases saturation)
+    :param hue_factor: Hue shift factor (-0.5 to 0.5, where 0 keeps the original hue)
+    :return: Transformed image
+    """
+    image = F_t.adjust_brightness(image, brightness_factor)
+    image = F_t.adjust_contrast(image, contrast_factor)
+    image = F_t.adjust_saturation(image, saturation_factor)
+    image = F_t.adjust_hue(image, hue_factor)
+
+    norm = transforms.Normalize(NORMALIZATION_MEAN, NORMALIZATION_STD)
+    image = norm(image)
 
     return image, boxes, labels

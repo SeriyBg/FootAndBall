@@ -312,6 +312,18 @@ class ToTensorAndNormalize(object):
         return self.image_transforms(image), boxes, classes
 
 
+class ToTensor(object):
+    # Convert image to tensors and normalize the image, ground truth is not changed
+    def __init__(self):
+        self.image_transforms = transforms.ToTensor()
+
+    def __call__(self, sample):
+        # numpy image: H x W x C
+        # torch image: C X H X W
+        image, boxes, classes = sample
+        return self.image_transforms(image), boxes, classes
+
+
 class TrainAugmentation(object):
     def __init__(self, size):
         self.size = size
@@ -329,8 +341,8 @@ class TrainAugmentation2(object):
     def __init__(self, size):
         self.size = size
         self.augment = transforms.Compose([
-            ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
-            ToTensorAndNormalize()
+            # ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
+            ToTensor()
         ])
 
     def __call__(self, sample):
@@ -340,8 +352,8 @@ class TrainAugmentation3(object):
     def __init__(self, size):
         self.size = size
         self.augment = transforms.Compose([
-            ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
-            RandomHorizontalFlip(p=1.0),
+            # ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
+            # RandomHorizontalFlip(p=1.0),
             ToTensorAndNormalize()
         ])
 
