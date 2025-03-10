@@ -46,7 +46,7 @@ def make_dataloaders(params: Params):
         train_dataset = ConcatDataset([train_issia_dataset])
     else:
         train_dataset = ConcatDataset([train_issia_dataset, train_spd_dataset])
-    batch_sampler = BalancedSampler(train_dataset)
+    # batch_sampler = BalancedSampler(train_dataset)
     batch_sampler = SlidingWindowSampler(train_dataset, params.batch_size)
     dataloaders['train'] = DataLoader(train_dataset,
                                       # sampler=batch_sampler,
@@ -69,6 +69,7 @@ def my_collate(batch):
 
 # @profile
 def transform_collate(batch):
+    print("Transforming next batch...")
     images, boxes, labels = zip(*batch)
     # old_images = images
 
