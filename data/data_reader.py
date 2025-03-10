@@ -69,7 +69,6 @@ def my_collate(batch):
 
 # @profile
 def transform_collate(batch):
-    print("Transforming next batch...")
     images, boxes, labels = zip(*batch)
     # old_images = images
 
