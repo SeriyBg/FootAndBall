@@ -70,7 +70,7 @@ def my_collate(batch):
 # @profile
 def transform_collate(batch):
     images, boxes, labels = zip(*batch)
-    old_images = images
+    # old_images = images
 
     # Get image dimensions (assuming all images have the same size)
     height, width = images[0].shape[1], images[0].shape[2]
@@ -105,7 +105,7 @@ def transform_collate(batch):
     # Convert back to the correct format. Stack transformed images into a single tensor
     images = torch.stack(images, dim=0)
 
-    visualize_batch(old_images[:5], images[:5])
+    # visualize_batch(old_images[:5], images[:5])
 
     return images, boxes, labels
 
