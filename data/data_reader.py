@@ -48,12 +48,12 @@ def make_dataloaders(params: Params):
         train_dataset = ConcatDataset([train_issia_dataset, train_spd_dataset])
     # batch_sampler = BalancedSampler(train_dataset)
     batch_sampler = SlidingWindowSampler(train_dataset, params.batch_size)
-    dataloaders['train'] = DataLoader(train_dataset,
+    dataloaders['train'] = WrappedDataLoader(DataLoader(train_dataset,
                                       # sampler=batch_sampler,
                                       # shuffle=False,
                                       # batch_size=params.batch_size,
                                       batch_sampler=batch_sampler,
-                                      num_workers=params.num_workers, pin_memory=True, collate_fn=transform_collate)
+                                      num_workers=params.num_workers, pin_memory=True, collate_fn=transform_collate))
 
     return dataloaders
 
@@ -65,6 +65,26 @@ def my_collate(batch):
     labels = [e[2] for e in batch]
     # visualize_batch(older_images, images)
     return images, boxes, labels
+
+
+class WrappedDataLoader(DataLoader):
+
+    def __init__(self, dataloader, print_every=100):
+        self.dataloader = dataloader  # Store the original DataLoader
+        self.print_every = print_every
+        self.counter = 0  # Batch counter
+
+    def __iter__(self):
+        self.counter = 0  # Reset counter for new epoch
+        for batch in iter(self.dataloader):
+            self.counter += 1
+            if self.counter % self.print_every == 0:
+                print(f"Accessed {self.counter} batches.")
+            yield batch
+
+    def __getattr__(self, name):
+        """Delegate attribute access to the original DataLoader."""
+        return getattr(self.dataloader, name)
 
 
 # @profile

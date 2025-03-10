@@ -44,10 +44,11 @@ class SlidingWindowSampler(Sampler):
             # Filter out "no ball" sequences based on probability
             filtered_batches = [
                 batch for batch in batches
-                if not (all(idx in self.no_ball_images_ndx for idx in batch) and random.random() < 0.9)
+                if not (all(idx in self.no_ball_images_ndx for idx in batch) and random.random() < 1)
             ]
 
-            all_batches.extend(filtered_batches)
+            if random.random() < 0.5:
+                all_batches.extend(filtered_batches)
 
         random.shuffle(all_batches)  # Shuffle batches, not indices inside batches
         print('Total number of batches: {}'.format(len(all_batches)))
