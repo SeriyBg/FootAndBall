@@ -46,12 +46,11 @@ class SlidingWindowSampler(Sampler):
                 batch for batch in batches
                 if not (all(idx in self.no_ball_images_ndx for idx in batch) and random.random() < 1)
             ]
-
-            if random.random() < 0.5:
-                all_batches.extend(filtered_batches)
+            all_batches.extend(filtered_batches)
 
         random.shuffle(all_batches)  # Shuffle batches, not indices inside batches
-        print('Total number of batches: {}'.format(len(all_batches)))
+        if len(all_batches) > 2500: # Shorten to 2500 batches for memory consumption reason
+            all_batches = all_batches[:2500]
         return iter(all_batches)
 
     def __len__(self):
