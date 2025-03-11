@@ -7,9 +7,10 @@ from data.issia_dataset2 import IssiaDataset as IssiaDataset2
 
 
 class SlidingWindowSampler(Sampler):
-    def __init__(self, data_source, batch_size):
+    def __init__(self, data_source, batch_size, step=1):
         self.data_source = data_source
         self.batch_size = batch_size
+        self.step = step
         self.sample_ndx = []
         self.no_ball_images_ndx = []
         self.camera_groups = {}  # Stores indices grouped by camera_id
@@ -39,7 +40,10 @@ class SlidingWindowSampler(Sampler):
             num_samples = len(indices)
 
             # Generate sliding window batches per camera
-            batches = [indices[i: i + self.batch_size] for i in range(num_samples - self.batch_size + 1)]
+            batches = [
+                indices[i: i + self.batch_size]
+                for i in range(0, num_samples - self.batch_size + 1, self.step)
+            ]
 
             # Filter out "no ball" sequences based on probability
             filtered_batches = [
@@ -54,4 +58,4 @@ class SlidingWindowSampler(Sampler):
         return iter(all_batches)
 
     def __len__(self):
-        return sum(len(indices) - self.batch_size + 1 for indices in self.camera_groups.values())
+        return sum((len(indices) - self.batch_size) // self.step + 1 for indices in self.camera_groups.values())
