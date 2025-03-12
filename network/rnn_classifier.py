@@ -26,7 +26,8 @@ class ConvRNNCell(nn.Module):
         batch_size, _, H, W = x.shape  # Get current batch size
 
         if h_prev is None or h_prev.shape[0] != batch_size:
-            h_prev = torch.zeros(batch_size, self.hidden_dim, H, W)  # Match batch size
+            print("device is {}".format(x.device))
+            h_prev = torch.zeros(batch_size, self.hidden_dim, H, W, device=x.device)  # Match batch size
 
         # Ensure spatial dimensions match
         if h_prev.shape[2] != H or h_prev.shape[3] != W:
