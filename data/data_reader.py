@@ -23,8 +23,7 @@ def make_dataloaders(params: Params):
     if params.issia_path is None:
         train_issia_dataset = None
     else:
-        train_issia_dataset = create_issia_dataset(params.issia_path, params.issia_train_cameras, mode='train',
-                                                   only_ball_frames=False, train_transform=augmentation.TrainAugmentation2((1080, 1920)))
+        train_issia_dataset = create_issia_dataset(params.issia_path, params.issia_train_cameras, mode='train', only_ball_frames=False)
         if len(params.issia_val_cameras) == 0:
             val_issia_dataset = None
         else:
