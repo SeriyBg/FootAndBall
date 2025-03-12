@@ -45,6 +45,7 @@ class Params:
         self.checkpoint_path = params.get('checkpoint_path', None)
 
         self.pretrained_weights = params.get('pretrained_weights', None)
+        self.sliding_window_stride = params.getint('sliding_window_stride', 3)
 
         self._check_params()
 

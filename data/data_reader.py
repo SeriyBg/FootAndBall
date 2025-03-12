@@ -45,7 +45,7 @@ def make_dataloaders(params: Params):
     else:
         train_dataset = ConcatDataset([train_issia_dataset, train_spd_dataset])
     # batch_sampler = BalancedSampler(train_dataset)
-    batch_sampler = SlidingWindowSampler(train_dataset, params.batch_size, step=3)
+    batch_sampler = SlidingWindowSampler(train_dataset, params.batch_size, step=params.sliding_window_stride)
     dataloaders['train'] = DataLoader(train_dataset,
                                       # sampler=batch_sampler,
                                       # shuffle=False,

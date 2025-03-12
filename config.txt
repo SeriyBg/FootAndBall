@@ -21,3 +21,5 @@ weight_decay=1e-5
 
 model=fb1
 
+# RNN params
+sliding_window_stride=5
