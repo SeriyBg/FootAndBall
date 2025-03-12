@@ -136,6 +136,7 @@ def train(params: Params):
     # if torch.mps.device_count() > 0:
     #     device = "mps"
 
+    print('Device: {}'.format(device))
     model = footandball.model_factory(params.model, 'train', weights_path=params.pretrained_weights)
     model.print_summary(show_architecture=True)
     model = model.to(device)
