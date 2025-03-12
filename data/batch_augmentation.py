@@ -12,15 +12,11 @@ def apply_all_transformations(image, boxes, labels, affine_params, crop_params, 
     """
     Apply Affine, Crop, and Color Jitter transformations in one step to reduce memory usage.
     """
-    # Unpack transformation parameters
-    angle, translate, scale, shear, flip = affine_params
-    crop_i, crop_j, crop_h, crop_w = crop_params
-    brightness, contrast, saturation, hue = jitter_params
-
     height, width = img_shape  # Image dimensions
 
     ## APPLY AFFINE TRANSFORMATION ##
     # Apply affine transformation to the image
+    angle, translate, scale, shear, flip = affine_params
     center = (width * 0.5, height * 0.5)
     image = F.affine(image, angle=angle, translate=translate, scale=scale, shear=shear,
                      interpolation=F.InterpolationMode.BILINEAR)
@@ -38,12 +34,15 @@ def apply_all_transformations(image, boxes, labels, affine_params, crop_params, 
         boxes[:, [0, 2]] = width - boxes[:, [2, 0]]  # Flip x-coordinates
 
     ## APPLY CROP ##
-    image = F.crop(image, top=crop_i, left=crop_j, height=crop_h, width=crop_w)
-    boxes[:, :2] -= torch.tensor([crop_j, crop_i], device=boxes.device)  # Adjust top-left
-    boxes[:, 2:4] -= torch.tensor([crop_j, crop_i], device=boxes.device)  # Adjust bottom-right
-    boxes, labels = clip(boxes, labels, (crop_w, crop_h))
+    if crop_params is not None:
+        crop_i, crop_j, crop_h, crop_w = crop_params
+        image = F.crop(image, top=crop_i, left=crop_j, height=crop_h, width=crop_w)
+        boxes[:, :2] -= torch.tensor([crop_j, crop_i], device=boxes.device)  # Adjust top-left
+        boxes[:, 2:4] -= torch.tensor([crop_j, crop_i], device=boxes.device)  # Adjust bottom-right
+        boxes, labels = clip(boxes, labels, (crop_w, crop_h))
 
     ## APPLY COLOR JITTER ##
+    brightness, contrast, saturation, hue = jitter_params
     image = F_t.adjust_brightness(image, brightness)
     image = F_t.adjust_contrast(image, contrast)
     image = F_t.adjust_saturation(image, saturation)

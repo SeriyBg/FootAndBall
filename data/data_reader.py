@@ -9,8 +9,7 @@ from matplotlib import pyplot as plt
 from torch.utils.data import Sampler, DataLoader, ConcatDataset
 
 import data.augmentation as augmentation
-from data.batch_augmentation import apply_affine_to_tensor, apply_crop_to_tensor, apply_color_jitter_to_tensor, \
-    apply_all_transformations
+from data.batch_augmentation import apply_all_transformations
 from data.issia_dataset2 import create_issia_dataset, IssiaDataset
 from data.sampler import SlidingWindowSampler
 from data.spd_bmvc2017_dataset import create_spd_dataset
@@ -25,7 +24,7 @@ def make_dataloaders(params: Params):
         train_issia_dataset = None
     else:
         train_issia_dataset = create_issia_dataset(params.issia_path, params.issia_train_cameras, mode='train',
-                                                   only_ball_frames=False, train_transform=augmentation.TrainAugmentation2((720, 1280)))
+                                                   only_ball_frames=False, train_transform=augmentation.TrainAugmentation2((1080, 1920)))
         if len(params.issia_val_cameras) == 0:
             val_issia_dataset = None
         else:
@@ -100,7 +99,8 @@ def transform_collate(batch):
     flip = torch.rand(1).item() < 0.5
 
     # Initialize the affine transformation **once per batch**
-    train_image_size = (720, 1280)
+    # train_image_size = (720, 1280)
+    train_image_size = (1080, 1920)
     crop_params = augmentation.RandomCrop(train_image_size).get_params(height, width)
 
     # Initialize color jitter transformation **once per batch**
@@ -114,7 +114,7 @@ def transform_collate(batch):
     transformed_batch = [
         apply_all_transformations(img, b, l,
                                   (*affine_params, flip),
-                                  (*crop_params, train_image_size[0], train_image_size[1]),
+                                  None, #(*crop_params, train_image_size[0], train_image_size[1]),
                                   jitter_params,
                                   (height, width))
         for img, b, l in batch]

@@ -124,7 +124,7 @@ class IssiaDataset(torch.utils.data.Dataset):
         return ball_images_ndx
 
 
-def create_issia_dataset(dataset_path, cameras, mode, only_ball_frames=False, train_transform=None):
+def create_issia_dataset(dataset_path, cameras, mode, only_ball_frames=False):
     # Get ISSIA datasets for multiple cameras
     assert mode == 'train' or mode == 'val'
     assert os.path.exists(dataset_path), 'Cannot find dataset: ' + str(dataset_path)
@@ -132,8 +132,7 @@ def create_issia_dataset(dataset_path, cameras, mode, only_ball_frames=False, tr
     train_image_size = (720, 1280)
     val_image_size = (1080, 1920)
     if mode == 'train':
-        assert train_transform is not None
-        transform = train_transform
+        transform = augmentation.TrainAugmentation2((1080, 1920))
     elif mode == 'val':
         transform = augmentation.NoAugmentation(size=val_image_size)
 
