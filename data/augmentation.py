@@ -341,7 +341,7 @@ class TrainAugmentation2(object):
     def __init__(self, size):
         self.size = size
         self.augment = transforms.Compose([
-            # ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
+            ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
             CenterCrop(self.size),
             ToTensor()
         ])

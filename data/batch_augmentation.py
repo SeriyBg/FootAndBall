@@ -44,11 +44,12 @@ def apply_all_transformations(image, boxes, labels, affine_params, crop_params, 
         boxes, labels = clip(boxes, labels, (crop_w, crop_h))
 
     ## APPLY COLOR JITTER ##
-    brightness, contrast, saturation, hue = jitter_params
-    image = F_t.adjust_brightness(image, brightness)
-    image = F_t.adjust_contrast(image, contrast)
-    image = F_t.adjust_saturation(image, saturation)
-    image = F_t.adjust_hue(image, hue)
+    if jitter_params is not None:
+        brightness, contrast, saturation, hue = jitter_params
+        image = F_t.adjust_brightness(image, brightness)
+        image = F_t.adjust_contrast(image, contrast)
+        image = F_t.adjust_saturation(image, saturation)
+        image = F_t.adjust_hue(image, hue)
 
     # Normalize after transformations
     image = normalize(image)
