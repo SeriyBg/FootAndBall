@@ -20,6 +20,8 @@ def apply_all_transformations(image, boxes, labels, affine_params, crop_params, 
     center = (width * 0.5, height * 0.5)
     image = F.affine(image, angle=angle, translate=translate, scale=scale, shear=shear,
                      interpolation=F.InterpolationMode.BILINEAR)
+    if image.device != boxes.device:
+        print("1. image device {}, boxes device {}".format(image.device, boxes.device))
 
     # Compute affine transformation matrix manually for bounding boxes
     affine_matrix = F._get_inverse_affine_matrix(center, angle, translate, scale, shear)
@@ -32,11 +34,15 @@ def apply_all_transformations(image, boxes, labels, affine_params, crop_params, 
     if flip:
         image = F.hflip(image)
         boxes[:, [0, 2]] = width - boxes[:, [2, 0]]  # Flip x-coordinates
+        if image.device != boxes.device:
+            print("2. image device {}, boxes device {}".format(image.device, boxes.device))
 
     ## APPLY CROP ##
     if crop_params is not None:
         crop_i, crop_j, crop_h, crop_w = crop_params
         image = F.crop(image, top=crop_i, left=crop_j, height=crop_h, width=crop_w)
+        if image.device != boxes.device:
+            print("3. image device {}, boxes device {}".format(image.device, boxes.device))
         boxes[:, :2] -= torch.tensor([crop_j, crop_i], device=boxes.device)  # Adjust top-left
         boxes[:, 2:4] -= torch.tensor([crop_j, crop_i], device=boxes.device)  # Adjust bottom-right
         boxes, labels = clip(boxes, labels, (crop_w, crop_h))
@@ -44,12 +50,22 @@ def apply_all_transformations(image, boxes, labels, affine_params, crop_params, 
     ## APPLY COLOR JITTER ##
     brightness, contrast, saturation, hue = jitter_params
     image = F_t.adjust_brightness(image, brightness)
+    if image.device != boxes.device:
+        print("4. image device {}, boxes device {}".format(image.device, boxes.device))
     image = F_t.adjust_contrast(image, contrast)
+    if image.device != boxes.device:
+        print("5. image device {}, boxes device {}".format(image.device, boxes.device))
     image = F_t.adjust_saturation(image, saturation)
+    if image.device != boxes.device:
+        print("6. image device {}, boxes device {}".format(image.device, boxes.device))
     image = F_t.adjust_hue(image, hue)
+    if image.device != boxes.device:
+        print("7. image device {}, boxes device {}".format(image.device, boxes.device))
 
     # Normalize after transformations
     image = normalize(image)
+    if image.device != boxes.device:
+        print("8. image device {}, boxes device {}".format(image.device, boxes.device))
 
     return image, boxes, labels
 

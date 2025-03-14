@@ -377,7 +377,7 @@ def freeze_model(model):
 
 
 def model_factory(model_name, phase, max_player_detections=100, max_ball_detections=100, player_threshold=0.0,
-                  ball_threshold=0.0, weights_path=None):
+                  ball_threshold=0.0):
     if model_name == 'fb1':
         model_fn = build_footandball_detector1
     else:
@@ -386,7 +386,6 @@ def model_factory(model_name, phase, max_player_detections=100, max_ball_detecti
 
     model_instance = model_fn(phase, ball_threshold=ball_threshold, player_threshold=player_threshold,
                   max_ball_detections=max_ball_detections, max_player_detections=max_player_detections)
-    preload_parameters(model_instance, weights_path)
     return model_instance
 
 
@@ -404,7 +403,7 @@ def preload_parameters(model: nn.Module, weights_path):
 
 
 if __name__ == '__main__':
-    net = model_factory('fb1', 'train', weights_path='../models/model_20201019_1416_final.pth')
+    net = model_factory('fb1', 'train')
     net.print_summary(show_architecture=True)
 
     x = torch.zeros((2, 3, 1024, 1024))

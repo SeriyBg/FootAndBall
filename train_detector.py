@@ -18,6 +18,7 @@ import torch.optim as optim
 
 from network import footandball
 from data.data_reader import make_dataloaders
+from network.footandball import preload_parameters
 from network.ssd_loss import SSDLoss
 from misc.config import Params
 
@@ -76,7 +77,8 @@ def train_model(model, optimizer, scheduler, num_epochs, dataloaders, device, mo
                     optimizer.zero_grad()
                     loss_l_player, loss_c_player, loss_c_ball = criterion(predictions, gt_maps)
 
-                    loss = alpha_l_player * loss_l_player + alpha_c_player * loss_c_player + alpha_c_ball * loss_c_ball
+                    # loss = alpha_l_player * loss_l_player + alpha_c_player * loss_c_player + alpha_c_ball * loss_c_ball
+                    loss = alpha_c_ball * loss_c_ball
 
                     # backward + optimize only if in training phase
                     if phase == 'train':
@@ -125,6 +127,7 @@ def train(params: Params):
         os.mkdir(MODEL_FOLDER)
 
     assert os.path.exists(MODEL_FOLDER), ' Cannot create folder to save trained model: {}'.format(MODEL_FOLDER)
+    assert not (params.checkpoint_path is not None and params.pretrained_weights is not None), 'Only one of checkpoint_path and pretrained_weights must be set'
 
     dataloaders = make_dataloaders(params)
     print('Training set: Dataset size: {}'.format(len(dataloaders['train'].dataset)))
@@ -137,7 +140,9 @@ def train(params: Params):
     #     device = "mps"
 
     print('Device: {}'.format(device))
-    model = footandball.model_factory(params.model, 'train', weights_path=params.pretrained_weights)
+    model = footandball.model_factory(params.model, 'train')
+    if params.pretrained_weights is not None:
+        preload_parameters(model, params.pretrained_weights)
     model.print_summary(show_architecture=True)
     model = model.to(device)
 
