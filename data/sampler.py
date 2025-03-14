@@ -53,7 +53,7 @@ class SlidingWindowSampler(Sampler):
             all_batches.extend(filtered_batches)
 
         random.shuffle(all_batches)  # Shuffle batches, not indices inside batches
-        max_batches = 2500 # Shorten to 2500 batches for memory consumption reason
+        max_batches = 1000 # Shorten batches for memory consumption reason
         if len(all_batches) > max_batches:
             all_batches = all_batches[:max_batches]
         return iter(all_batches)

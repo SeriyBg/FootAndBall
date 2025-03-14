@@ -20,8 +20,6 @@ def apply_all_transformations(image, boxes, labels, affine_params, crop_params, 
     center = (width * 0.5, height * 0.5)
     image = F.affine(image, angle=angle, translate=translate, scale=scale, shear=shear,
                      interpolation=F.InterpolationMode.BILINEAR)
-    if image.device != boxes.device:
-        print("1. image device {}, boxes device {}".format(image.device, boxes.device))
 
     # Compute affine transformation matrix manually for bounding boxes
     affine_matrix = F._get_inverse_affine_matrix(center, angle, translate, scale, shear)
@@ -34,8 +32,6 @@ def apply_all_transformations(image, boxes, labels, affine_params, crop_params, 
     if flip:
         image = F.hflip(image)
         boxes[:, [0, 2]] = width - boxes[:, [2, 0]]  # Flip x-coordinates
-        if image.device != boxes.device:
-            print("2. image device {}, boxes device {}".format(image.device, boxes.device))
 
     ## APPLY CROP ##
     if crop_params is not None:
@@ -50,22 +46,12 @@ def apply_all_transformations(image, boxes, labels, affine_params, crop_params, 
     ## APPLY COLOR JITTER ##
     brightness, contrast, saturation, hue = jitter_params
     image = F_t.adjust_brightness(image, brightness)
-    if image.device != boxes.device:
-        print("4. image device {}, boxes device {}".format(image.device, boxes.device))
     image = F_t.adjust_contrast(image, contrast)
-    if image.device != boxes.device:
-        print("5. image device {}, boxes device {}".format(image.device, boxes.device))
     image = F_t.adjust_saturation(image, saturation)
-    if image.device != boxes.device:
-        print("6. image device {}, boxes device {}".format(image.device, boxes.device))
     image = F_t.adjust_hue(image, hue)
-    if image.device != boxes.device:
-        print("7. image device {}, boxes device {}".format(image.device, boxes.device))
 
     # Normalize after transformations
     image = normalize(image)
-    if image.device != boxes.device:
-        print("8. image device {}, boxes device {}".format(image.device, boxes.device))
 
     return image, boxes, labels
 
