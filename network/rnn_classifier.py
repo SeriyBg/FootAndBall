@@ -134,7 +134,6 @@ class Conv2dRNNCell(nn.Module):
         if h_prev is None:
             h_prev = torch.zeros_like(x[:, :self.hidden_size, :, :])  # Initialize hidden state
 
-        print("X shape is {} and h_prev shape is {}".format(x.shape, h_prev.shape))
         h_next = self.x2h(x) + self.h2h(h_prev)
         h_next = self.norm(h_next)
         h_next = self.dropout(h_next)
@@ -197,12 +196,12 @@ class ClassifierRNN(nn.Module):
             self.conv_rnn = Conv2dGRUCell(hidden_dim, kernel_size)
         else:
             raise ValueError("Invalid RNN type: {}".format(type))
-        # self.classifier = nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1)
-        self.classifier = nn.Sequential(
-            nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(output_dim, output_dim, kernel_size=3, padding=1)
-        )
+        self.classifier = nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1)
+        # self.classifier = nn.Sequential(
+        #     nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(output_dim, output_dim, kernel_size=3, padding=1)
+        # )
 
     # def forward(self, x, h_prev=None):
     def forward(self, x):
@@ -213,7 +212,7 @@ class ClassifierRNN(nn.Module):
         batch_size, _, H, W = x.shape
         outputs = []
 
-        h_prev = torch.zeros(batch_size, self.hidden_dim, H, W, device=x.device)
+        h_prev = torch.zeros(1, self.hidden_dim, H, W, device=x.device)
         for t in range(batch_size):
             x_t = x[t:t + 1, :, :, :]  # Process one frame at a time
             h_prev = self.conv_rnn(x_t, h_prev)  # Update hidden state

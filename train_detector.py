@@ -73,12 +73,14 @@ def train_model(model, optimizer, scheduler, num_epochs, dataloaders, device, mo
 
                 with torch.set_grad_enabled(phase == 'train'):
                     predictions = model(images)
+                    print("~~~~~~~~~~~~~~~")
+                    print(predictions[2].shape)
                     # Backpropagation
                     optimizer.zero_grad()
                     loss_l_player, loss_c_player, loss_c_ball = criterion(predictions, gt_maps)
 
-                    # loss = alpha_l_player * loss_l_player + alpha_c_player * loss_c_player + alpha_c_ball * loss_c_ball
-                    loss = alpha_c_ball * loss_c_ball
+                    loss = alpha_l_player * loss_l_player + alpha_c_player * loss_c_player + alpha_c_ball * loss_c_ball
+                    # loss = alpha_c_ball * loss_c_ball
 
                     # backward + optimize only if in training phase
                     if phase == 'train':
