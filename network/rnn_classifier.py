@@ -196,12 +196,12 @@ class ClassifierRNN(nn.Module):
             self.conv_rnn = Conv2dGRUCell(hidden_dim, kernel_size)
         else:
             raise ValueError("Invalid RNN type: {}".format(type))
-        self.classifier = nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1)
-        # self.classifier = nn.Sequential(
-        #     nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1),
-        #     nn.ReLU(inplace=True),
-        #     nn.Conv2d(output_dim, output_dim, kernel_size=3, padding=1)
-        # )
+        # self.classifier = nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1)
+        self.classifier = nn.Sequential(
+            nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(output_dim, output_dim, kernel_size=3, padding=1)
+        )
 
     # def forward(self, x, h_prev=None):
     def forward(self, x):
