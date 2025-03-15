@@ -4,20 +4,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Conv2dGRUCell(nn.Module):
-    def __init__(self, input_size, hidden_size, kernel_size=3, dropout_prob=0.3):
+    def __init__(self, hidden_size, kernel_size=3, dropout_prob=0.3):
         super(Conv2dGRUCell, self).__init__()
 
-        self.input_size = input_size
         self.hidden_size = hidden_size
-        self.kernel_size = kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
+        self.kernel_size = (kernel_size, kernel_size) if isinstance(kernel_size, int) else kernel_size
         self.padding = (self.kernel_size[0] // 2, self.kernel_size[1] // 2)
 
         # Input-to-hidden and hidden-to-hidden convolution layers (3 gates: r, z, n)
-        self.x2h = nn.Conv2d(input_size, hidden_size * 3, kernel_size=self.kernel_size, padding=self.padding)
+        self.x2h = nn.Conv2d(hidden_size, hidden_size * 3, kernel_size=self.kernel_size, padding=self.padding)
         self.h2h = nn.Conv2d(hidden_size, hidden_size * 3, kernel_size=self.kernel_size, padding=self.padding)
 
         # Layer normalization for stability
-        self.norm = nn.GroupNorm(num_groups=hidden_size // 4, num_channels=hidden_size * 3)
+        self.norm = nn.GroupNorm(num_groups=max(1, hidden_size // 4), num_channels=hidden_size * 3)
 
         # Dropout to prevent overfitting
         self.dropout = nn.Dropout(p=dropout_prob)
@@ -40,16 +39,16 @@ class Conv2dGRUCell(nn.Module):
             hx = torch.zeros(batch_size, self.hidden_size, H, W, device=x.device)
 
         # Compute gate activations
-        gates = self.x2h(x) + self.h2h(hx)
-        gates = self.norm(gates)  # Apply normalization
+        x_gates = self.x2h(x)  # (batch_size, hidden_size * 3, H, W)
+        h_gates = self.h2h(hx)  # (batch_size, hidden_size * 3, H, W)
 
-        # Split into three gate tensors
-        r_t, z_t, n_t = gates.chunk(3, dim=1)
+        gates = self.norm(x_gates + h_gates)  # Apply normalization
+        r_t, z_t, n_t = gates.chunk(3, dim=1)  # Split into 3 gate tensors
 
         # Apply activation functions
         r_t = torch.sigmoid(r_t)  # Reset gate
         z_t = torch.sigmoid(z_t)  # Update gate
-        n_t = torch.tanh(n_t + r_t * self.h2h(hx))  # Candidate activation
+        n_t = torch.tanh(n_t + r_t * h_gates.chunk(3, dim=1)[2])  # Candidate activation (use n_t part of h_gates)
 
         # Compute new hidden state
         h_next = (1 - z_t) * n_t + z_t * hx
@@ -59,16 +58,15 @@ class Conv2dGRUCell(nn.Module):
 
 
 class Conv2dLSTMCell(nn.Module):
-    def __init__(self, input_size, hidden_size, kernel_size=3, dropout_prob=0.3):
+    def __init__(self, hidden_size, kernel_size=3, dropout_prob=0.3):
         super(Conv2dLSTMCell, self).__init__()
 
-        self.input_size = input_size
         self.hidden_size = hidden_size
         self.kernel_size = kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
         self.padding = (self.kernel_size[0] // 2, self.kernel_size[1] // 2)
 
         # Input-to-hidden and hidden-to-hidden convolution layers (4 gates: i, f, g, o)
-        self.x2h = nn.Conv2d(input_size, hidden_size * 4, kernel_size=self.kernel_size, padding=self.padding)
+        self.x2h = nn.Conv2d(hidden_size, hidden_size * 4, kernel_size=self.kernel_size, padding=self.padding)
         self.h2h = nn.Conv2d(hidden_size, hidden_size * 4, kernel_size=self.kernel_size, padding=self.padding)
 
         # Layer normalization for stability
@@ -121,12 +119,12 @@ class Conv2dLSTMCell(nn.Module):
 
 
 class Conv2dRNNCell(nn.Module):
-    def __init__(self, input_size, hidden_size, kernel_size, dropout_prob=0.3):
+    def __init__(self, hidden_size, kernel_size, dropout_prob=0.3):
         super(Conv2dRNNCell, self).__init__()
 
         self.hidden_size = hidden_size
 
-        self.x2h = nn.Conv2d(input_size, hidden_size, kernel_size, padding=kernel_size // 2)
+        self.x2h = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=kernel_size // 2)
         self.h2h = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=kernel_size // 2)
 
         self.norm = nn.GroupNorm(num_groups=hidden_size // 4, num_channels=hidden_size)
@@ -192,14 +190,13 @@ class ClassifierRNN(nn.Module):
         self.ball_classifier = ball_classifier  # Frozen CNN
         print("Output dim is {} and hidden dim is {}".format(output_dim, hidden_dim))
         if type == "rnn":
-            self.conv_rnn = ConvRNNCell(output_dim, hidden_dim, kernel_size)
+            self.conv_rnn = Conv2dRNNCell(hidden_dim, kernel_size)
         elif type == "lstm":
-            self.conv_rnn = Conv2dLSTMCell(output_dim, hidden_dim, kernel_size)
+            self.conv_rnn = Conv2dLSTMCell(hidden_dim, kernel_size)
         elif type == "gru":
-            self.conv_rnn = Conv2dGRUCell(output_dim, hidden_dim, kernel_size)
+            self.conv_rnn = Conv2dGRUCell(hidden_dim, kernel_size)
         else:
             raise ValueError("Invalid RNN type: {}".format(type))
-        self.conv_rnn = Conv2dRNNCell(output_dim, hidden_dim, kernel_size)
         # self.classifier = nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1)
         self.classifier = nn.Sequential(
             nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1),

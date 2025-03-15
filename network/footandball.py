@@ -350,8 +350,8 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     #ball_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
     ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
                                     nn.ReLU(inplace=True),
-                                    nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
-    freeze_model(ball_classifier)
+                                    nn.Conv2d(i_channels, out_channels=i_channels, kernel_size=3, padding=1))
+    freeze_model(ball_classifier, skip_freeze=["2.weight", "2.bias"])
     ball_classifier = ClassifierRNN(ball_classifier, hidden_dim=i_channels, output_dim=2)
 
     # player_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
@@ -371,9 +371,10 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     return detector
 
 
-def freeze_model(model):
-    for param in model.parameters():
-        param.requires_grad = False
+def freeze_model(model, skip_freeze=[]):
+    for name, param in model.named_parameters():
+        if name not in skip_freeze:
+            param.requires_grad = False
 
 
 def model_factory(model_name, phase, max_player_detections=100, max_ball_detections=100, player_threshold=0.0,
@@ -395,6 +396,8 @@ def preload_parameters(model: nn.Module, weights_path):
     state_dict["ball_classifier.ball_classifier.0.bias"] = state_dict["ball_classifier.0.bias"]
     state_dict["ball_classifier.ball_classifier.2.weight"] = state_dict["ball_classifier.2.weight"]
     state_dict["ball_classifier.ball_classifier.2.bias"] = state_dict["ball_classifier.2.bias"]
+    del state_dict["ball_classifier.ball_classifier.2.weight"]
+    del state_dict["ball_classifier.ball_classifier.2.bias"]
     del state_dict["ball_classifier.0.bias"]
     del state_dict["ball_classifier.0.weight"]
     del state_dict["ball_classifier.2.weight"]
@@ -404,6 +407,7 @@ def preload_parameters(model: nn.Module, weights_path):
 
 if __name__ == '__main__':
     net = model_factory('fb1', 'train')
+    preload_parameters(net, weights_path="../models/model_20201019_1416_final.pth")
     net.print_summary(show_architecture=True)
 
     x = torch.zeros((2, 3, 1024, 1024))
