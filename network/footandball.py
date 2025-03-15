@@ -8,7 +8,7 @@ import torch.nn as nn
 import network.fpn as fpn
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
-from network.rnn_classifier import ClassifierRNN, CombinedClassifier
+from network.rnn_classifier import ClassifierRNN
 
 
 # Get ranges of cells to mark with ground truth location

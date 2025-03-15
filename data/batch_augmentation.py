@@ -15,23 +15,24 @@ def apply_all_transformations(image, boxes, labels, affine_params, crop_params, 
     height, width = img_shape  # Image dimensions
 
     ## APPLY AFFINE TRANSFORMATION ##
-    # Apply affine transformation to the image
-    angle, translate, scale, shear, flip = affine_params
-    center = (width * 0.5, height * 0.5)
-    image = F.affine(image, angle=angle, translate=translate, scale=scale, shear=shear,
-                     interpolation=F.InterpolationMode.BILINEAR)
+    if affine_params is not None:
+        # Apply affine transformation to the image
+        angle, translate, scale, shear, flip = affine_params
+        center = (width * 0.5, height * 0.5)
+        image = F.affine(image, angle=angle, translate=translate, scale=scale, shear=shear,
+                         interpolation=F.InterpolationMode.BILINEAR)
 
-    # Compute affine transformation matrix manually for bounding boxes
-    affine_matrix = F._get_inverse_affine_matrix(center, angle, translate, scale, shear)
-    inverse_affine_matrix = torch.tensor(affine_matrix).reshape(2, 3)
+        # Compute affine transformation matrix manually for bounding boxes
+        affine_matrix = F._get_inverse_affine_matrix(center, angle, translate, scale, shear)
+        inverse_affine_matrix = torch.tensor(affine_matrix).reshape(2, 3)
 
-    # Apply transformation to bounding boxes
-    boxes, labels = apply_transform_and_clip(boxes, labels, inverse_affine_matrix, (width, height))
+        # Apply transformation to bounding boxes
+        boxes, labels = apply_transform_and_clip(boxes, labels, inverse_affine_matrix, (width, height))
 
-    # Apply Horizontal Flip
-    if flip:
-        image = F.hflip(image)
-        boxes[:, [0, 2]] = width - boxes[:, [2, 0]]  # Flip x-coordinates
+        # Apply Horizontal Flip
+        if flip:
+            image = F.hflip(image)
+            boxes[:, [0, 2]] = width - boxes[:, [2, 0]]  # Flip x-coordinates
 
     ## APPLY CROP ##
     if crop_params is not None:
