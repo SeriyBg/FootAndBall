@@ -46,6 +46,7 @@ class Params:
 
         self.pretrained_weights = params.get('pretrained_weights', None)
         self.sliding_window_stride = params.getint('sliding_window_stride', 3)
+        self.rnn_type = params.get('rnn_type', "rnn")
 
         self._check_params()
 

@@ -183,19 +183,22 @@ class ConvRNNCell(nn.Module):
 class ClassifierRNN(nn.Module):
     """ Ball classifier with frozen CNN and trainable ConvRNN """
 
-    def __init__(self, ball_classifier, hidden_dim, output_dim=2, kernel_size=3, type="rnn"):
+    def __init__(self, ball_classifier, hidden_dim, output_dim=2, kernel_size=3, rnn_type="rnn"):
         super(ClassifierRNN, self).__init__()
         self.hidden_dim = hidden_dim
         self.ball_classifier = ball_classifier  # Frozen CNN
         print("Output dim is {} and hidden dim is {}".format(output_dim, hidden_dim))
-        if type == "rnn":
+        if rnn_type == "rnn":
+            print("rnn")
             self.conv_rnn = Conv2dRNNCell(hidden_dim, kernel_size)
-        elif type == "lstm":
+        elif rnn_type == "lstm":
+            print("lstm")
             self.conv_rnn = Conv2dLSTMCell(hidden_dim, kernel_size)
-        elif type == "gru":
+        elif rnn_type == "gru":
+            print("gru")
             self.conv_rnn = Conv2dGRUCell(hidden_dim, kernel_size)
         else:
-            raise ValueError("Invalid RNN type: {}".format(type))
+            raise ValueError("Invalid RNN type: {}".format(rnn_type))
         # self.classifier = nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1)
         self.classifier = nn.Sequential(
             nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1),

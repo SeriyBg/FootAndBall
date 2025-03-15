@@ -19,4 +19,4 @@ model=fb1
 
 # RNN params
 sliding_window_stride=5
-
+rnn_type=rnn

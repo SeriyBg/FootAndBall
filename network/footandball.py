@@ -332,7 +332,7 @@ class FootAndBall(nn.Module):
 
 
 def build_footandball_detector1(phase='train', max_player_detections=100, max_ball_detections=100,
-                                player_threshold=0.0, ball_threshold=0.0):
+                                player_threshold=0.0, ball_threshold=0.0, rnn_type=None):
     # phase: 'train' or 'test'
     assert phase in ['train', 'test', 'detect']
 
@@ -354,7 +354,7 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
                                     nn.ReLU(inplace=True),
                                     nn.Conv2d(i_channels, out_channels=i_channels, kernel_size=3, padding=1))
     freeze_model(ball_classifier, skip_freeze=["2.weight", "2.bias"])
-    ball_classifier = ClassifierRNN(ball_classifier, hidden_dim=i_channels, output_dim=2)
+    ball_classifier = ClassifierRNN(ball_classifier, hidden_dim=i_channels, output_dim=2, rnn_type=rnn_type)
 
     # player_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
     player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
@@ -380,7 +380,7 @@ def freeze_model(model, skip_freeze=[]):
 
 
 def model_factory(model_name, phase, max_player_detections=100, max_ball_detections=100, player_threshold=0.0,
-                  ball_threshold=0.0):
+                  ball_threshold=0.0, rnn_type="rnn"):
     if model_name == 'fb1':
         model_fn = build_footandball_detector1
     else:
@@ -388,7 +388,7 @@ def model_factory(model_name, phase, max_player_detections=100, max_ball_detecti
         raise NotImplementedError
 
     model_instance = model_fn(phase, ball_threshold=ball_threshold, player_threshold=player_threshold,
-                  max_ball_detections=max_ball_detections, max_player_detections=max_player_detections)
+                  max_ball_detections=max_ball_detections, max_player_detections=max_player_detections, rnn_type=rnn_type)
     return model_instance
 
 
