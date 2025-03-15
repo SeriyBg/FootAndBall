@@ -15,12 +15,6 @@ class Conv2dGRUCell(nn.Module):
         self.x2h = nn.Conv2d(hidden_size, hidden_size * 3, kernel_size=self.kernel_size, padding=self.padding)
         self.h2h = nn.Conv2d(hidden_size, hidden_size * 3, kernel_size=self.kernel_size, padding=self.padding)
 
-        # Layer normalization for stability
-        self.norm = nn.GroupNorm(num_groups=max(1, hidden_size // 4), num_channels=hidden_size * 3)
-
-        # Dropout to prevent overfitting
-        self.dropout = nn.Dropout(p=dropout_prob)
-
         # Weight initialization
         self.reset_parameters()
 
@@ -42,7 +36,7 @@ class Conv2dGRUCell(nn.Module):
         x_gates = self.x2h(x)  # (batch_size, hidden_size * 3, H, W)
         h_gates = self.h2h(hx)  # (batch_size, hidden_size * 3, H, W)
 
-        gates = self.norm(x_gates + h_gates)  # Apply normalization
+        gates = x_gates + h_gates
         r_t, z_t, n_t = gates.chunk(3, dim=1)  # Split into 3 gate tensors
 
         # Apply activation functions
@@ -52,7 +46,6 @@ class Conv2dGRUCell(nn.Module):
 
         # Compute new hidden state
         h_next = (1 - z_t) * n_t + z_t * hx
-        h_next = self.dropout(h_next)  # Apply dropout
 
         return h_next
 
@@ -68,12 +61,6 @@ class Conv2dLSTMCell(nn.Module):
         # Input-to-hidden and hidden-to-hidden convolution layers (4 gates: i, f, g, o)
         self.x2h = nn.Conv2d(hidden_size, hidden_size * 4, kernel_size=self.kernel_size, padding=self.padding)
         self.h2h = nn.Conv2d(hidden_size, hidden_size * 4, kernel_size=self.kernel_size, padding=self.padding)
-
-        # Layer normalization for stability
-        self.norm = nn.GroupNorm(num_groups=hidden_size // 4, num_channels=hidden_size * 4)
-
-        # Dropout to prevent overfitting
-        self.dropout = nn.Dropout(p=dropout_prob)
 
         # Weight initialization
         self.reset_parameters()
@@ -97,7 +84,6 @@ class Conv2dLSTMCell(nn.Module):
 
         # Compute gates
         gates = self.x2h(x) + self.h2h(h_prev)
-        gates = self.norm(gates)  # Apply normalization
 
         # Split into four gate tensors
         i_t, f_t, g_t, o_t = gates.chunk(4, dim=1)
@@ -110,7 +96,6 @@ class Conv2dLSTMCell(nn.Module):
 
         # Compute new cell state
         c_next = f_t * c_prev + i_t * g_t
-        c_next = self.dropout(c_next)  # Apply dropout
 
         # Compute new hidden state
         h_next = o_t * torch.tanh(c_next)
@@ -127,19 +112,12 @@ class Conv2dRNNCell(nn.Module):
         self.x2h = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=kernel_size // 2)
         self.h2h = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=kernel_size // 2)
 
-        self.norm = nn.GroupNorm(num_groups=hidden_size // 4, num_channels=hidden_size)
-        self.dropout = nn.Dropout(p=dropout_prob)
-
     def forward(self, x, h_prev=None):
         if h_prev is None:
             h_prev = torch.zeros_like(x[:, :self.hidden_size, :, :])  # Initialize hidden state
 
         h_next = self.x2h(x) + self.h2h(h_prev)
-        h_next = self.norm(h_next)
-        h_next = self.dropout(h_next)
-
         h_next = torch.tanh(h_next)
-
         return h_next
 
 
@@ -183,7 +161,7 @@ class ConvRNNCell(nn.Module):
 class ClassifierRNN(nn.Module):
     """ Ball classifier with frozen CNN and trainable ConvRNN """
 
-    def __init__(self, ball_classifier, hidden_dim, output_dim=2, kernel_size=3, rnn_type="rnn"):
+    def __init__(self, ball_classifier, hidden_dim, output_dim=2, kernel_size=3, dropout_prob=0.3, rnn_type="rnn"):
         super(ClassifierRNN, self).__init__()
         self.hidden_dim = hidden_dim
         self.ball_classifier = ball_classifier  # Frozen CNN
@@ -196,6 +174,10 @@ class ClassifierRNN(nn.Module):
             self.conv_rnn = Conv2dGRUCell(hidden_dim, kernel_size)
         else:
             raise ValueError("Invalid RNN type: {}".format(rnn_type))
+
+        # self.norm = nn.GroupNorm(num_groups=hidden_dim // 4, num_channels=hidden_dim)
+        # self.dropout = nn.Dropout(p=dropout_prob)
+
         # self.classifier = nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1)
         self.classifier = nn.Sequential(
             nn.Conv2d(hidden_dim, output_dim, kernel_size=3, padding=1),
@@ -218,29 +200,9 @@ class ClassifierRNN(nn.Module):
             h_prev = self.conv_rnn(x_t, h_prev)  # Update hidden state
             outputs.append(h_prev)
 
-        out = self.classifier(torch.cat(outputs, dim=0))  # Process all frames at once
+        out = torch.cat(outputs, dim=0)
+        # out = self.norm(out)
+        # out = self.dropout(out)
+        out = self.classifier(out)  # Process all frames at once
         # return out, h_prev
         return out
-
-
-class CombinedClassifier(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim=2, kernel_size=3):
-        super(CombinedClassifier, self).__init__()
-
-        # CNN feature extractor
-        self.feature_extractor = nn.Sequential(
-            nn.Conv2d(input_dim, hidden_dim, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, padding=1)
-        )
-
-        # RNN for temporal processing
-        self.rnn = ClassifierRNN(hidden_dim, hidden_dim, output_dim, kernel_size)
-
-    def forward(self, x, h_prev=None):
-        x = self.feature_extractor(x)  # CNN extracts spatial features first
-        out, h_next = self.rnn(x, h_prev)  # RNN processes refined features
-
-        return out, h_next  # Return classification output and updated hidden state
-
-
