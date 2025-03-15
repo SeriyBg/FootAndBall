@@ -353,7 +353,7 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
                                     nn.ReLU(inplace=True),
                                     nn.Conv2d(i_channels, out_channels=i_channels, kernel_size=3, padding=1))
-    freeze_model(ball_classifier, skip_freeze=["2.weight", "2.bias"])
+    # freeze_model(ball_classifier, skip_freeze=["2.weight", "2.bias"])
     ball_classifier = ClassifierRNN(ball_classifier, hidden_dim=i_channels, output_dim=2, rnn_type=rnn_type)
 
     # player_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
