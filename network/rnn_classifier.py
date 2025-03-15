@@ -189,13 +189,10 @@ class ClassifierRNN(nn.Module):
         self.ball_classifier = ball_classifier  # Frozen CNN
         print("Output dim is {} and hidden dim is {}".format(output_dim, hidden_dim))
         if rnn_type == "rnn":
-            print("rnn")
             self.conv_rnn = Conv2dRNNCell(hidden_dim, kernel_size)
         elif rnn_type == "lstm":
-            print("lstm")
             self.conv_rnn = Conv2dLSTMCell(hidden_dim, kernel_size)
         elif rnn_type == "gru":
-            print("gru")
             self.conv_rnn = Conv2dGRUCell(hidden_dim, kernel_size)
         else:
             raise ValueError("Invalid RNN type: {}".format(rnn_type))
