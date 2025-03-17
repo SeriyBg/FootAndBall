@@ -379,9 +379,10 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
 
 
 def freeze_model(model, skip_freeze=[]):
-    for name, param in model.named_parameters():
-        if name not in skip_freeze:
-            param.requires_grad = False
+    pass
+    # for name, param in model.named_parameters():
+    #     if name not in skip_freeze:
+    #         param.requires_grad = False
 
 
 def model_factory(model_name, phase, max_player_detections=100, max_ball_detections=100, player_threshold=0.0,
