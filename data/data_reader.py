@@ -11,7 +11,7 @@ from torch.utils.data import Sampler, DataLoader, ConcatDataset
 import data.augmentation as augmentation
 from data.batch_augmentation import apply_all_transformations
 from data.issia_dataset import IssiaDataset
-from data.issia_dataset import create_issia_dataset
+from data.issia_dataset2 import create_issia_dataset
 from data.sampler import SlidingWindowSampler
 from data.spd_bmvc2017_dataset import create_spd_dataset
 from misc.config import Params
@@ -42,15 +42,15 @@ def make_dataloaders(params: Params):
         train_dataset = ConcatDataset([train_issia_dataset])
     else:
         train_dataset = ConcatDataset([train_issia_dataset, train_spd_dataset])
-    batch_sampler = BalancedSampler(train_dataset)
-    dataloaders['train'] = DataLoader(train_dataset,
-                                      sampler=batch_sampler,
-                                      batch_size=params.batch_size,
-                                      num_workers=params.num_workers, pin_memory=True, collate_fn=my_collate)
-    # batch_sampler = SlidingWindowSampler(train_dataset, params.batch_size, step=params.sliding_window_stride)
+    # batch_sampler = BalancedSampler(train_dataset)
     # dataloaders['train'] = DataLoader(train_dataset,
-    #                                   batch_sampler=batch_sampler,
-    #                                   num_workers=params.num_workers, pin_memory=True, collate_fn=transform_collate)
+    #                                   sampler=batch_sampler,
+    #                                   batch_size=params.batch_size,
+    #                                   num_workers=params.num_workers, pin_memory=True, collate_fn=my_collate)
+    batch_sampler = SlidingWindowSampler(train_dataset, params.batch_size, step=params.sliding_window_stride)
+    dataloaders['train'] = DataLoader(train_dataset,
+                                      batch_sampler=batch_sampler,
+                                      num_workers=params.num_workers, pin_memory=True, collate_fn=transform_collate)
 
     return dataloaders
 
