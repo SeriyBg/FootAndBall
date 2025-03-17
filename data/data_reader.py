@@ -96,9 +96,9 @@ def transform_collate(batch):
     flip = torch.rand(1).item() < 0.5
 
     # Initialize the affine transformation **once per batch**
-    # train_image_size = (720, 1280)
+    train_image_size = (720, 1280)
     # train_image_size = (1080, 1920)
-    # crop_params = augmentation.RandomCrop(train_image_size).get_params(height, width)
+    crop_params = augmentation.RandomCrop(train_image_size).get_params(height, width)
 
     # Initialize color jitter transformation **once per batch**
     # brightness_factor = torch.empty(1).uniform_(0.8, 1.2).item()
@@ -111,7 +111,7 @@ def transform_collate(batch):
     transformed_batch = [
         apply_all_transformations(img, b, l,
                                   (*affine_params, flip),
-                                  None, #(*crop_params, train_image_size[0], train_image_size[1]),
+                                  (*crop_params, train_image_size[0], train_image_size[1]),
                                   None, #jitter_params,
                                   (height, width))
         for img, b, l in batch]
