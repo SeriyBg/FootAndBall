@@ -8,6 +8,7 @@ import torch.nn as nn
 import network.fpn as fpn
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
+from network.ball_classifier_fusion import BallClassifierFusion
 from network.rnn_classifier import ClassifierRNN
 
 
@@ -349,12 +350,16 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     freeze_model(base_net.lateral_layers)
     # ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
     #                                 nn.ReLU(inplace=True),
-    #                                 nn.Conv2d(i_channels, out_channels=out_channels, kernel_size=3, padding=1))
-    ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
-                                    nn.ReLU(inplace=True),
-                                    nn.Conv2d(i_channels, out_channels=i_channels, kernel_size=3, padding=1))
+    #                                 nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    # freeze_model(ball_classifier)
+    # ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+    #                                 nn.ReLU(inplace=True),
+    #                                 nn.Conv2d(i_channels, out_channels=i_channels, kernel_size=3, padding=1))
     # freeze_model(ball_classifier, skip_freeze=["2.weight", "2.bias"])
-    ball_classifier = ClassifierRNN(ball_classifier, hidden_dim=i_channels, output_dim=2, rnn_type=rnn_type)
+    # ball_classifier = ClassifierRNN(ball_classifier, hidden_dim=i_channels, output_dim=2, rnn_type=rnn_type)
+    ball_classifier = BallClassifierFusion(lateral_channels, i_channels)
+    freeze_model(ball_classifier, skip_freeze=['conv_fusion.0.weight', 'conv_fusion.0.bias', 'conv_fusion.2.weight', 'conv_fusion.2.bias'])
+
 
     # player_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
     player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
@@ -396,6 +401,8 @@ def preload_parameters(model: nn.Module, weights_path):
     state_dict = torch.load(weights_path, map_location=lambda storage, loc: storage)
     state_dict["ball_classifier.ball_classifier.0.weight"] = state_dict["ball_classifier.0.weight"]
     state_dict["ball_classifier.ball_classifier.0.bias"] = state_dict["ball_classifier.0.bias"]
+    state_dict["ball_classifier.conv.0.weight"] = state_dict["ball_classifier.0.weight"]
+    state_dict["ball_classifier.conv.0.bias"] = state_dict["ball_classifier.0.bias"]
     state_dict["ball_classifier.ball_classifier.2.weight"] = state_dict["ball_classifier.2.weight"]
     state_dict["ball_classifier.ball_classifier.2.bias"] = state_dict["ball_classifier.2.bias"]
     del state_dict["ball_classifier.ball_classifier.2.weight"]
@@ -408,11 +415,11 @@ def preload_parameters(model: nn.Module, weights_path):
 
 
 if __name__ == '__main__':
-    net = model_factory('fb1', 'train')
+    net = model_factory('fb1', 'train', rnn_type='gru')
     preload_parameters(net, weights_path="../models/model_20201019_1416_final.pth")
     net.print_summary(show_architecture=True)
 
-    x = torch.zeros((2, 3, 1024, 1024))
+    x = torch.zeros((12, 3, 1024, 1024))
     x = net(x)
 
     for t in x:

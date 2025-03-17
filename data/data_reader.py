@@ -16,9 +16,6 @@ from data.spd_bmvc2017_dataset import create_spd_dataset
 from misc.config import Params
 
 
-# from memory_profiler import profile
-
-
 def make_dataloaders(params: Params):
     if params.issia_path is None:
         train_issia_dataset = None
@@ -45,11 +42,12 @@ def make_dataloaders(params: Params):
     else:
         train_dataset = ConcatDataset([train_issia_dataset, train_spd_dataset])
     # batch_sampler = BalancedSampler(train_dataset)
+    # dataloaders['train'] = DataLoader(train_dataset,
+    #                                   sampler=batch_sampler,
+    #                                   batch_size=params.batch_size,
+    #                                   num_workers=params.num_workers, pin_memory=True, collate_fn=my_collate)
     batch_sampler = SlidingWindowSampler(train_dataset, params.batch_size, step=params.sliding_window_stride)
     dataloaders['train'] = DataLoader(train_dataset,
-                                      # sampler=batch_sampler,
-                                      # shuffle=False,
-                                      # batch_size=params.batch_size,
                                       batch_sampler=batch_sampler,
                                       num_workers=params.num_workers, pin_memory=True, collate_fn=transform_collate)
 
@@ -58,7 +56,7 @@ def make_dataloaders(params: Params):
 
 def my_collate(batch):
     images = torch.stack([e[0] for e in batch], dim=0)
-    #older_images = images
+    # older_images = images
     boxes = [e[1] for e in batch]
     labels = [e[2] for e in batch]
     # visualize_batch(older_images, images)
@@ -85,7 +83,6 @@ class WrappedDataLoader(DataLoader):
         return getattr(self.dataloader, name)
 
 
-# @profile
 def transform_collate(batch):
     images, boxes, labels = zip(*batch)
     # old_images = images
