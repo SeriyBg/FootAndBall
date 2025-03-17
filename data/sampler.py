@@ -3,7 +3,6 @@ import random
 from torch.utils.data import Sampler
 
 from data.issia_dataset import IssiaDataset
-from data.issia_dataset2 import IssiaDataset as IssiaDataset2
 
 
 class SlidingWindowSampler(Sampler):
@@ -19,7 +18,7 @@ class SlidingWindowSampler(Sampler):
     def generate_samples(self):
         issia_dataset_ndx = None
         for ndx, ds in enumerate(self.data_source.datasets):
-            if isinstance(ds, IssiaDataset) or isinstance(ds, IssiaDataset2):
+            if isinstance(ds, IssiaDataset):
                 issia_dataset_ndx = ndx
 
         issia_ds = self.data_source.datasets[issia_dataset_ndx]

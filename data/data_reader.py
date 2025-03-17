@@ -10,7 +10,8 @@ from torch.utils.data import Sampler, DataLoader, ConcatDataset
 
 import data.augmentation as augmentation
 from data.batch_augmentation import apply_all_transformations
-from data.issia_dataset2 import create_issia_dataset, IssiaDataset
+from data.issia_dataset import IssiaDataset
+from data.issia_dataset2 import create_issia_dataset
 from data.sampler import SlidingWindowSampler
 from data.spd_bmvc2017_dataset import create_spd_dataset
 from misc.config import Params
