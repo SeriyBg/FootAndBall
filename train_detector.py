@@ -103,7 +103,8 @@ def train_model(model, optimizer, scheduler, num_epochs, dataloaders, device, mo
                            avg_batch_stats['loss_player_c'], avg_batch_stats['loss_player_l']))
 
         # Scheduler step
-        scheduler.step(avg_batch_stats['loss_ball_c'])
+        # scheduler.step(avg_batch_stats['loss_ball_c'])
+        scheduler.step()
         print('')
 
     model_filepath = os.path.join(MODEL_FOLDER, model_name + '_final' + '.pth')
