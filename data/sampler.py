@@ -1,4 +1,5 @@
 import random
+from collections import Counter
 
 from torch.utils.data import Sampler
 
@@ -44,15 +45,26 @@ class SlidingWindowSampler(Sampler):
                 for i in range(0, num_samples - self.batch_size + 1, self.step)
             ]
 
-            # Filter out "no ball" sequences based on probability
+            # Filter out the batches where less than half of the frames does not contain the ball
             filtered_batches = [
                 batch for batch in batches
-                if not (all(idx in self.no_ball_images_ndx for idx in batch) and random.random() < 1)
+                if sum(1 for frame in batch if frame in self.no_ball_images_ndx) <= (self.batch_size * 0.75)
             ]
+            # Filter out "no ball" sequences based on probability
+            # filtered_batches = [
+            #     batch for batch in batches
+            #     if not (all(idx in self.no_ball_images_ndx for idx in batch) and random.random() < 1)
+            # ]
             all_batches.extend(filtered_batches)
 
+        no_ball_counts = [sum(1 for frame in batch if frame in self.no_ball_images_ndx) for batch in all_batches]
+        # Count occurrences of each no-ball count
+        batch_distribution = Counter(no_ball_counts)
+        # Display result
+        for count, num_batches in sorted(batch_distribution.items(), reverse=True):
+            print(f"{num_batches} batches with {count} no ball frames")
         random.shuffle(all_batches)  # Shuffle batches, not indices inside batches
-        max_batches = 1500 # Shorten batches for memory consumption reason
+        max_batches = 2000 # Shorten batches for memory consumption reason
         if len(all_batches) > max_batches:
             all_batches = all_batches[:max_batches]
         return iter(all_batches)
