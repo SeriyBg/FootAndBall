@@ -348,16 +348,16 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     base_net = fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
     freeze_model(base_net.layers)
     freeze_model(base_net.lateral_layers)
-    ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
-                                    nn.ReLU(inplace=True),
-                                    nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    # ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+    #                                 nn.ReLU(inplace=True),
+    #                                 nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
     # freeze_model(ball_classifier)
     # ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
     #                                 nn.ReLU(inplace=True),
     #                                 nn.Conv2d(i_channels, out_channels=i_channels, kernel_size=3, padding=1))
     # freeze_model(ball_classifier, skip_freeze=["2.weight", "2.bias"])
     # ball_classifier = ClassifierRNN(ball_classifier, hidden_dim=i_channels, output_dim=2, rnn_type=rnn_type)
-    # ball_classifier = BallClassifierFusion(lateral_channels, i_channels)
+    ball_classifier = BallClassifierFusion(lateral_channels, i_channels)
     #freeze_model(ball_classifier, skip_freeze=['conv_fusion.0.weight', 'conv_fusion.0.bias', 'conv_fusion.2.weight', 'conv_fusion.2.bias'])
 
 

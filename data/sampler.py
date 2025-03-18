@@ -57,12 +57,12 @@ class SlidingWindowSampler(Sampler):
             # ]
             all_batches.extend(filtered_batches)
 
-        no_ball_counts = [sum(1 for frame in batch if frame in self.no_ball_images_ndx) for batch in all_batches]
-        # Count occurrences of each no-ball count
-        batch_distribution = Counter(no_ball_counts)
-        # Display result
-        for count, num_batches in sorted(batch_distribution.items(), reverse=True):
-            print(f"{num_batches} batches with {count} no ball frames")
+        # no_ball_counts = [sum(1 for frame in batch if frame in self.no_ball_images_ndx) for batch in all_batches]
+        # # Count occurrences of each no-ball count
+        # batch_distribution = Counter(no_ball_counts)
+        # # Display result
+        # for count, num_batches in sorted(batch_distribution.items(), reverse=True):
+        #     print(f"{num_batches} batches with {count} no ball frames")
         random.shuffle(all_batches)  # Shuffle batches, not indices inside batches
         max_batches = 2000 # Shorten batches for memory consumption reason
         if len(all_batches) > max_batches:
