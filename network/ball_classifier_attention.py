@@ -7,9 +7,9 @@ class BallClassifierWithAttention(nn.Module):
         # Feature extraction
         self.step1 = nn.Sequential(
             nn.Conv2d(lateral_channels, i_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(i_channels),  # Normalization
+            # nn.BatchNorm2d(i_channels),  # Normalization
             nn.ReLU(inplace=True),
-            nn.Dropout(dropout_rate)
+            # nn.Dropout(dropout_rate)
         )
 
         # Attention Layer (Spatial Attention)
@@ -18,14 +18,17 @@ class BallClassifierWithAttention(nn.Module):
             nn.Sigmoid()
         )
 
-        # Ball Classification
         self.step2 = nn.Sequential(
-            nn.Conv2d(i_channels, i_channels // 2, kernel_size=3, padding=1),
-            nn.BatchNorm2d(i_channels // 2),  # Normalization
-            nn.ReLU(inplace=True),
-            nn.Dropout(dropout_rate),  # Dropout
-            nn.Conv2d(i_channels // 2, out_channels=2, kernel_size=3, padding=1)
+            nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1)
         )
+        # Ball Classification
+        # self.step2 = nn.Sequential(
+        #     nn.Conv2d(i_channels, i_channels // 2, kernel_size=3, padding=1),
+        #     nn.BatchNorm2d(i_channels // 2),  # Normalization
+        #     nn.ReLU(inplace=True),
+        #     nn.Dropout(dropout_rate),  # Dropout
+        #     nn.Conv2d(i_channels // 2, out_channels=2, kernel_size=3, padding=1)
+        # )
 
     def forward(self, x):
         x = self.step1(x)  # Extract features
