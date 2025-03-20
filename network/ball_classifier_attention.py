@@ -1,0 +1,31 @@
+from torch import nn
+
+class BallClassifierWithAttention(nn.Module):
+    def __init__(self, lateral_channels, i_channels):
+        super(BallClassifierWithAttention, self).__init__()
+
+        # Feature extraction
+        self.step1 = nn.Sequential(
+            nn.Conv2d(lateral_channels, i_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True)
+        )
+
+        # Attention Layer (Spatial Attention)
+        self.attention = nn.Sequential(
+            nn.Conv2d(i_channels, 1, kernel_size=3, padding=1),
+            nn.Sigmoid()
+        )
+
+        # Ball Classification
+        self.step2 = nn.Sequential(
+            nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1)
+        )
+
+    def forward(self, x):
+        x = self.step1(x)  # Extract features
+
+        attn_map = self.attention(x)  # Compute attention map
+        x = x * attn_map  # Apply attention
+
+        x = self.step2(x)  # Final classification
+        return x
