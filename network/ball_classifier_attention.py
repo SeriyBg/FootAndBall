@@ -26,7 +26,6 @@ class BallClassifierWithAttention(nn.Module):
             nn.Dropout(dropout_rate),  # Dropout
             nn.Conv2d(i_channels // 2, out_channels=2, kernel_size=3, padding=1)
         )
-        )
 
     def forward(self, x):
         x = self.step1(x)  # Extract features
