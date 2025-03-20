@@ -360,8 +360,8 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     # freeze_model(ball_classifier, skip_freeze=["2.weight", "2.bias"])
     # ball_classifier = ClassifierRNN(ball_classifier, hidden_dim=i_channels, output_dim=2, rnn_type=rnn_type)
     # ball_classifier = BallClassifierFusion(lateral_channels, i_channels)
-    ball_classifier = BallClassifier3D(lateral_channels, i_channels)
-    # ball_classifier = BallClassifierOpticalFlow(lateral_channels, i_channels)
+    # ball_classifier = BallClassifier3D(lateral_channels, i_channels)
+    ball_classifier = BallClassifierOpticalFlow(lateral_channels, i_channels)
     #freeze_model(ball_classifier, skip_freeze=['conv_fusion.0.weight', 'conv_fusion.0.bias', 'conv_fusion.2.weight', 'conv_fusion.2.bias'])
 
 
