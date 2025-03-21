@@ -151,7 +151,10 @@ def train(params: Params):
     model_name = 'model_' + time.strftime("%Y%m%d_%H%M")
     print('Model name: {}'.format(model_name))
 
-    optimizer = optim.Adam(model.parameters(), lr=params.lr)#, weight_decay=params.weight_decay)
+    if params.checkpoint_path is not None:
+        optimizer = optim.Adam(model.parameters(), lr=params.lr, weight_decay=params.weight_decay)
+    else:
+        optimizer = optim.Adam(model.parameters(), lr=params.lr)
     # scheduler_milestones = [int(params.epochs * 0.75)]
     scheduler_milestones = [int(params.epochs * 0.25)]
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, scheduler_milestones, gamma=0.1)
