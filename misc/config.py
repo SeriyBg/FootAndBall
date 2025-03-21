@@ -37,7 +37,7 @@ class Params:
         self.batch_size = params.getint('batch_size', 4)
         self.epochs = params.getint('epochs', 20)
         self.lr = params.getfloat('lr', 1e-3)
-        self.weight_decay = params.getfloat('weight_decay', 1e-5)
+        self.weight_decay = params.getfloat('weight_decay', None)
 
         self.model = params.get('model', 'fb1')
         self.model_name = 'model_{}_{}'.format(self.model, get_datetime())
