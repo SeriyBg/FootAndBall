@@ -152,7 +152,8 @@ def train(params: Params):
     print('Model name: {}'.format(model_name))
 
     optimizer = optim.Adam(model.parameters(), lr=params.lr)#, weight_decay=params.weight_decay)
-    scheduler_milestones = [int(params.epochs * 0.75)]
+    # scheduler_milestones = [int(params.epochs * 0.75)]
+    scheduler_milestones = [int(params.epochs * 0.25)]
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, scheduler_milestones, gamma=0.1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
 
