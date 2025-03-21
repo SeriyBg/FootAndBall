@@ -1,8 +1,8 @@
 from torch import nn
 
-class BallClassifierWithAttention(nn.Module):
+class ClassifierWithAttention(nn.Module):
     def __init__(self, lateral_channels, i_channels, dropout_rate=0.3):
-        super(BallClassifierWithAttention, self).__init__()
+        super(ClassifierWithAttention, self).__init__()
 
         # Feature extraction
         self.step1 = nn.Sequential(
@@ -21,14 +21,6 @@ class BallClassifierWithAttention(nn.Module):
         self.step2 = nn.Sequential(
             nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1)
         )
-        # Ball Classification
-        # self.step2 = nn.Sequential(
-        #     nn.Conv2d(i_channels, i_channels // 2, kernel_size=3, padding=1),
-        #     nn.BatchNorm2d(i_channels // 2),  # Normalization
-        #     nn.ReLU(inplace=True),
-        #     nn.Dropout(dropout_rate),  # Dropout
-        #     nn.Conv2d(i_channels // 2, out_channels=2, kernel_size=3, padding=1)
-        # )
 
     def forward(self, x):
         x = self.step1(x)  # Extract features

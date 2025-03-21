@@ -9,7 +9,7 @@ import network.fpn as fpn
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
 from network.ball_classifier_3d import BallClassifier3D
-from network.ball_classifier_attention import BallClassifierWithAttention
+from network.ball_classifier_attention import ClassifierWithAttention
 from network.ball_classifier_fusion import BallClassifierFusion
 from network.ball_classifier_optical_flow import BallClassifierOpticalFlow
 from network.rnn_classifier import ClassifierRNN
@@ -363,14 +363,15 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     # ball_classifier = BallClassifierFusion(lateral_channels, i_channels)
     # ball_classifier = BallClassifier3D(lateral_channels, i_channels)
     # ball_classifier = BallClassifierOpticalFlow(lateral_channels, i_channels)
-    ball_classifier = BallClassifierWithAttention(lateral_channels, i_channels)
+    ball_classifier = ClassifierWithAttention(lateral_channels, i_channels)
     #freeze_model(ball_classifier, skip_freeze=['conv_fusion.0.weight', 'conv_fusion.0.bias', 'conv_fusion.2.weight', 'conv_fusion.2.bias'])
 
 
     # player_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
-    player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
-                                      nn.ReLU(inplace=True),
-                                      nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    # player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+    #                                   nn.ReLU(inplace=True),
+    #                                   nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    player_classifier = ClassifierWithAttention(lateral_channels, i_channels)
     freeze_model(player_classifier)
     # player_regressor = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=4)
     player_regressor = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
