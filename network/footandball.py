@@ -350,6 +350,35 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     i_channels = 32
 
     base_net = fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
+    ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+                                    nn.ReLU(inplace=True),
+                                    nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+                                      nn.ReLU(inplace=True),
+                                      nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
+    player_regressor = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+                                     nn.ReLU(inplace=True),
+                                     nn.Conv2d(i_channels, out_channels=4, kernel_size=3, padding=1))
+    detector = FootAndBall(phase, base_net, player_regressor=player_regressor, player_classifier=player_classifier,
+                           ball_classifier=ball_classifier, ball_threshold=ball_threshold,
+                           player_threshold=player_threshold, max_ball_detections=max_ball_detections,
+                           max_player_detections=max_player_detections)
+    return detector
+
+def build_footandball_detector2(phase='train', max_player_detections=100, max_ball_detections=100,
+                                player_threshold=0.0, ball_threshold=0.0, rnn_type=None):
+    # phase: 'train' or 'test'
+    assert phase in ['train', 'test', 'detect']
+
+    layers, out_channels = fpn.make_modules(fpn.cfg['X'], batch_norm=True)
+    # FPN returns 3 tensors for each input: one dowscaled 4 times in each input dimension, the other downscaled 16 times
+    # tensor with 2 channels downscaled 4 times is used for ball detection
+    # tensor with 2 channels downscaled 16 times is used for the player detection (1 location corresponds to 16x16 pixel block)
+    # tensor with 4 channels downscaled 16 times is used for the player bbox regression
+    lateral_channels = 32
+    i_channels = 32
+
+    base_net = fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
     freeze_model(base_net.layers)
     freeze_model(base_net.lateral_layers)
     # ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
@@ -364,7 +393,8 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
     # ball_classifier = BallClassifierFusion(lateral_channels, i_channels)
     # ball_classifier = BallClassifier3D(lateral_channels, i_channels)
     # ball_classifier = BallClassifierOpticalFlow(lateral_channels, i_channels)
-    ball_classifier = ClassifierWithAttention(lateral_channels, i_channels)
+    # ball_classifier = ClassifierWithAttention(lateral_channels, i_channels)
+    ball_classifier = ClassifierWithSEAttention(lateral_channels, i_channels)
     #freeze_model(ball_classifier, skip_freeze=['conv_fusion.0.weight', 'conv_fusion.0.bias', 'conv_fusion.2.weight', 'conv_fusion.2.bias'])
 
 
@@ -398,6 +428,8 @@ def model_factory(model_name, phase, max_player_detections=100, max_ball_detecti
                   ball_threshold=0.0, rnn_type="rnn"):
     if model_name == 'fb1':
         model_fn = build_footandball_detector1
+    elif model_name == 'fb2':
+        model_fn = build_footandball_detector2
     else:
         print('Model not implemented: {}'.format(model_name))
         raise NotImplementedError

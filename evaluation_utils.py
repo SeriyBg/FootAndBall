@@ -135,13 +135,13 @@ if __name__ == '__main__':
     # Camera ids are between 1 and 6
     dataset_path = '/Users/sergebishyr/PhD/datasets/issia'
     camera_id = 6
-    sequence = open_issia_sequence(camera_id, dataset_path)
+    # sequence = open_issia_sequence(camera_id, dataset_path)
 
     # Read annotations included in the dataset
     gt_annotations = read_issia_ground_truth(camera_id, dataset_path)
     #
     # # Show annotated video sequence
-    save_detection_results(camera_id, dataset_path, gt_annotations=gt_annotations, annotations=annotations)
+    # save_detection_results(camera_id, dataset_path, gt_annotations=gt_annotations, annotations=annotations)
 
     # Ball detection in pixels performance
     # This should return all ones as we evaluate the performance on ground truth data
