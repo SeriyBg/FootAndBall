@@ -7,9 +7,7 @@ class ClassifierWithAttention(nn.Module):
         # Feature extraction
         self.step1 = nn.Sequential(
             nn.Conv2d(lateral_channels, i_channels, kernel_size=3, padding=1),
-            # nn.BatchNorm2d(i_channels),  # Normalization
             nn.ReLU(inplace=True),
-            # nn.Dropout(dropout_rate)
         )
 
         # Attention Layer (Spatial Attention)
