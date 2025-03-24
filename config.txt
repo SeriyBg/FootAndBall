@@ -16,10 +16,10 @@ sportsmot_splits=football
 epochs=5
 lr=1e-3
 batch_size=12
-num_workers=8
+num_workers=1
 weight_decay=1e-5
 
-model=fb1
+model=fb2
 
 # RNN params
 sliding_window_stride=5

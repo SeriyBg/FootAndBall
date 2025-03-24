@@ -393,8 +393,8 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
     # ball_classifier = BallClassifierFusion(lateral_channels, i_channels)
     # ball_classifier = BallClassifier3D(lateral_channels, i_channels)
     # ball_classifier = BallClassifierOpticalFlow(lateral_channels, i_channels)
-    # ball_classifier = ClassifierWithAttention(lateral_channels, i_channels)
-    ball_classifier = ClassifierWithSEAttention(lateral_channels, i_channels)
+    ball_classifier = ClassifierWithAttention(lateral_channels, i_channels)
+    # ball_classifier = ClassifierWithSEAttention(lateral_channels, i_channels)
     #freeze_model(ball_classifier, skip_freeze=['conv_fusion.0.weight', 'conv_fusion.0.bias', 'conv_fusion.2.weight', 'conv_fusion.2.bias'])
 
 
@@ -402,8 +402,8 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
     # player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
     #                                   nn.ReLU(inplace=True),
     #                                   nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
-    # player_classifier = ClassifierWithAttention(lateral_channels, i_channels)
-    player_classifier = ClassifierWithSEAttention(lateral_channels, i_channels)
+    player_classifier = ClassifierWithAttention(lateral_channels, i_channels)
+    # player_classifier = ClassifierWithSEAttention(lateral_channels, i_channels)
     freeze_model(player_classifier)
     # player_regressor = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=4)
     player_regressor = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
