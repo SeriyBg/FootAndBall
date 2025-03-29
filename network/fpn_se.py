@@ -23,7 +23,7 @@ cfg = {
     'X': [16, 'M', 32, 32, 'M', 32, 32, 'M', 64, 64, 'M', 64, 64, 'M'],
 }
 
-se_layers = [0]
+se_layers = [0, 6, 12]
 
 def make_modules(cfg, batch_norm=False):
     modules = nn.ModuleList()
