@@ -2,9 +2,9 @@ import torch
 from torch import nn
 
 
-class BallClassifier3D(nn.Module):
+class Classifier3D(nn.Module):
     def __init__(self, lateral_channels, i_channels):
-        super(BallClassifier3D, self).__init__()
+        super(Classifier3D, self).__init__()
         self.step1 = nn.Sequential(
             nn.Conv2d(lateral_channels, i_channels, kernel_size=3, padding=1),
             nn.ReLU(inplace=True)

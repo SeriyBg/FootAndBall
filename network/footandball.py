@@ -5,14 +5,12 @@
 import torch
 import torch.nn as nn
 
-import network.fpn as fpn
+import network.fpn_se as fpn
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
-from network.ball_classifier_3d import BallClassifier3D
+from network.ball_classifier_3d import Classifier3D
+from network.classifier_cbam import ClassifierCBAM
 from network.classifier_attention import ClassifierWithAttention
-from network.ball_classifier_fusion import BallClassifierFusion
-from network.ball_classifier_optical_flow import BallClassifierOpticalFlow
-from network.classifier_se_attention import ClassifierWithSEAttention
 from network.rnn_classifier import ClassifierRNN
 
 
@@ -337,7 +335,7 @@ class FootAndBall(nn.Module):
 
 
 def build_footandball_detector1(phase='train', max_player_detections=100, max_ball_detections=100,
-                                player_threshold=0.0, ball_threshold=0.0, rnn_type=None):
+                                player_threshold=0.0, ball_threshold=0.0):
     # phase: 'train' or 'test'
     assert phase in ['train', 'test', 'detect']
 
@@ -365,8 +363,9 @@ def build_footandball_detector1(phase='train', max_player_detections=100, max_ba
                            max_player_detections=max_player_detections)
     return detector
 
+
 def build_footandball_detector2(phase='train', max_player_detections=100, max_ball_detections=100,
-                                player_threshold=0.0, ball_threshold=0.0, rnn_type=None):
+                                player_threshold=0.0, ball_threshold=0.0):
     # phase: 'train' or 'test'
     assert phase in ['train', 'test', 'detect']
 
@@ -379,37 +378,12 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
     i_channels = 32
 
     base_net = fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
-    freeze_model(base_net.layers)
-    freeze_model(base_net.lateral_layers)
-    # ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
-    #                                 nn.ReLU(inplace=True),
-    #                                 nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
-    # freeze_model(ball_classifier)
-    # ball_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
-    #                                 nn.ReLU(inplace=True),
-    #                                 nn.Conv2d(i_channels, out_channels=i_channels, kernel_size=3, padding=1))
-    # freeze_model(ball_classifier, skip_freeze=["2.weight", "2.bias"])
-    # ball_classifier = ClassifierRNN(ball_classifier, hidden_dim=i_channels, output_dim=2, rnn_type=rnn_type)
-    # ball_classifier = BallClassifierFusion(lateral_channels, i_channels)
-    # ball_classifier = BallClassifier3D(lateral_channels, i_channels)
-    # ball_classifier = BallClassifierOpticalFlow(lateral_channels, i_channels)
-    ball_classifier = ClassifierWithAttention(lateral_channels, i_channels)
-    # ball_classifier = ClassifierWithSEAttention(lateral_channels, i_channels)
-    #freeze_model(ball_classifier, skip_freeze=['conv_fusion.0.weight', 'conv_fusion.0.bias', 'conv_fusion.2.weight', 'conv_fusion.2.bias'])
+    ball_classifier = build_classifier(lateral_channels, i_channels, classifier_type='cbam')
 
-
-    # player_classifier = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2)
-    # player_classifier = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
-    #                                   nn.ReLU(inplace=True),
-    #                                   nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
-    player_classifier = ClassifierWithAttention(lateral_channels, i_channels)
-    # player_classifier = ClassifierWithSEAttention(lateral_channels, i_channels)
-    freeze_model(player_classifier)
-    # player_regressor = ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=4)
+    player_classifier = build_classifier(lateral_channels, i_channels, classifier_type='cbam')
     player_regressor = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
                                      nn.ReLU(inplace=True),
                                      nn.Conv2d(i_channels, out_channels=4, kernel_size=3, padding=1))
-    freeze_model(player_regressor)
     detector = FootAndBall(phase, base_net, player_regressor=player_regressor, player_classifier=player_classifier,
                            ball_classifier=ball_classifier, ball_threshold=ball_threshold,
                            player_threshold=player_threshold, max_ball_detections=max_ball_detections,
@@ -417,15 +391,25 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
     return detector
 
 
-def freeze_model(model, skip_freeze=[]):
-    pass
-    # for name, param in model.named_parameters():
-    #     if name not in skip_freeze:
-    #         param.requires_grad = False
+def build_classifier(lateral_channels, i_channels, classifier_type=None):
+    if classifier_type is None:
+        return nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
+                             nn.ReLU(inplace=True),
+                             nn.Conv2d(i_channels, out_channels=i_channels, kernel_size=3, padding=1))
+    elif classifier_type == 'attention':
+        return ClassifierWithAttention(lateral_channels, i_channels)
+    elif classifier_type == 'cbam':
+        return ClassifierCBAM(lateral_channels, i_channels)
+    elif classifier_type == '3d':
+        return Classifier3D(lateral_channels, i_channels)
+    elif classifier_type == "rnn":
+        return ClassifierRNN(lateral_channels, hidden_dim=i_channels, output_dim=2, rnn_type="rnn")
+    else:
+        raise ValueError('Unknown classifier type: {}'.format(classifier_type))
 
 
 def model_factory(model_name, phase, max_player_detections=100, max_ball_detections=100, player_threshold=0.0,
-                  ball_threshold=0.0, rnn_type="rnn"):
+                  ball_threshold=0.0):
     if model_name == 'fb1':
         model_fn = build_footandball_detector1
     elif model_name == 'fb2':
@@ -435,7 +419,7 @@ def model_factory(model_name, phase, max_player_detections=100, max_ball_detecti
         raise NotImplementedError
 
     model_instance = model_fn(phase, ball_threshold=ball_threshold, player_threshold=player_threshold,
-                  max_ball_detections=max_ball_detections, max_player_detections=max_player_detections, rnn_type=rnn_type)
+                              max_ball_detections=max_ball_detections, max_player_detections=max_player_detections)
     return model_instance
 
 
@@ -457,7 +441,7 @@ def preload_parameters(model: nn.Module, weights_path):
 
 
 if __name__ == '__main__':
-    net = model_factory('fb1', 'train', rnn_type='gru')
+    net = model_factory('fb1', 'train')
     preload_parameters(net, weights_path="../models/model_20201019_1416_final.pth")
     net.print_summary(show_architecture=True)
 

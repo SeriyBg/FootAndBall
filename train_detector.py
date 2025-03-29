@@ -141,7 +141,7 @@ def train(params: Params):
     #     device = "mps"
 
     print('Device: {}'.format(device))
-    model = footandball.model_factory(params.model, 'train', rnn_type=params.rnn_type)
+    model = footandball.model_factory(params.model, 'train')
     if params.pretrained_weights is not None:
         print('Loading pretrained weights: {}'.format(params.pretrained_weights))
         preload_parameters(model, params.pretrained_weights)

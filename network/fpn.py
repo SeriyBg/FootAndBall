@@ -47,7 +47,6 @@ class FPN(nn.Module):
     def __init__(self, layers, out_channels, lateral_channels, return_layers=None):
         # return_layers: index of layers (numbered from 0) for which feature maps are returned
         super(FPN, self).__init__()
-
         assert len(layers) == len(out_channels)
 
         self.layers = layers
