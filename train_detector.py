@@ -156,7 +156,7 @@ def train(params: Params):
     else:
         optimizer = optim.Adam(model.parameters(), lr=params.lr)
     # scheduler_milestones = [int(params.epochs * 0.75)]
-    scheduler_milestones = [int(params.epochs * 0.10), int(params.epochs * 0.25), int(params.epochs * 0.50), int(params.epochs * 0.75)]
+    scheduler_milestones = [int(params.epochs * 0.25), int(params.epochs * 0.50), int(params.epochs * 0.75)]
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, scheduler_milestones, gamma=0.1)
     # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
 
