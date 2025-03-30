@@ -42,7 +42,10 @@ def make_modules(cfg, batch_norm=False):
             if idx in se_layers:
                 # Apply SE to the first convolution layer
                 conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
-                layers += [conv2d, SEBlock(v), nn.ReLU(inplace=True)]
+                if batch_norm:
+                    layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True), SEBlock(v)]
+                else:
+                    layers += [conv2d, nn.ReLU(inplace=True), SEBlock(v)]
             else:
                 if batch_norm:
                     conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1, bias=False)

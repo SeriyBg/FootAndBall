@@ -441,7 +441,7 @@ def preload_parameters(model: nn.Module, weights_path):
 
 
 if __name__ == '__main__':
-    net = model_factory('fb1', 'train')
+    net = model_factory('fb2', 'train')
     preload_parameters(net, weights_path="../models/model_20201019_1416_final.pth")
     net.print_summary(show_architecture=True)
 
