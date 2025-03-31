@@ -5,7 +5,7 @@
 import torch
 import torch.nn as nn
 
-import network.fpn_se as fpn
+import network.fpn as fpn
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
 from network.ball_classifier_3d import Classifier3D
