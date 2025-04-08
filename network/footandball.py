@@ -395,7 +395,7 @@ def build_classifier(lateral_channels, i_channels, classifier_type=None):
     if classifier_type is None:
         return nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
                              nn.ReLU(inplace=True),
-                             nn.Conv2d(i_channels, out_channels=i_channels, kernel_size=3, padding=1))
+                             nn.Conv2d(i_channels, out_channels=2, kernel_size=3, padding=1))
     elif classifier_type == 'attention':
         return ClassifierWithAttention(lateral_channels, i_channels)
     elif classifier_type == 'cbam':
@@ -442,7 +442,7 @@ def preload_parameters(model: nn.Module, weights_path):
 
 if __name__ == '__main__':
     net = model_factory('fb2', 'train')
-    preload_parameters(net, weights_path="../models/model_20201019_1416_final.pth")
+    # preload_parameters(net, weights_path="../models/model_20201019_1416_final.pth")
     net.print_summary(show_architecture=True)
 
     x = torch.zeros((12, 3, 1024, 1024))
