@@ -5,7 +5,7 @@
 import torch
 import torch.nn as nn
 
-import network.fpn as fpn
+import network.fpn_se as fpn
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
 from network.ball_classifier_3d import Classifier3D
@@ -378,9 +378,9 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
     i_channels = 32
 
     base_net = fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
-    ball_classifier = build_classifier(lateral_channels, i_channels, classifier_type='cbam')
+    ball_classifier = build_classifier(lateral_channels, i_channels)
 
-    player_classifier = build_classifier(lateral_channels, i_channels, classifier_type='cbam')
+    player_classifier = build_classifier(lateral_channels, i_channels)
     player_regressor = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
                                      nn.ReLU(inplace=True),
                                      nn.Conv2d(i_channels, out_channels=4, kernel_size=3, padding=1))
