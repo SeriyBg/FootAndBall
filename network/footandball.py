@@ -394,10 +394,9 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
 
 def build_fpn(layers, out_channels, lateral_channels, return_layers, fpn_type=None):
     if fpn_type is None:
-        return fpn.FPN(layers, out_channels=out_channels, return_layers=return_layers)
+        return fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
     elif fpn_type == 'SE':
-        return fpn_se.FPN(layers, out_channels=out_channels, return_layers=return_layers)
-
+        return fpn_se.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
 
 
 def build_classifier(lateral_channels, i_channels, classifier_type=None):
