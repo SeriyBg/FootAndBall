@@ -5,7 +5,8 @@
 import torch
 import torch.nn as nn
 
-import network.fpn_se as fpn
+import network.fpn as fpn
+import network.fpn as fpn_se
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
 from network.ball_classifier_3d import Classifier3D
@@ -377,8 +378,8 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
     lateral_channels = 32
     i_channels = 32
 
-    base_net = fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
-    ball_classifier = build_classifier(lateral_channels, i_channels)
+    base_net = build_fpn(layers, out_channels, lateral_channels, [1, 3], fpn_type="SE")
+    ball_classifier = build_classifier(lateral_channels, i_channels, classifier_type="cbam")
 
     player_classifier = build_classifier(lateral_channels, i_channels)
     player_regressor = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
@@ -389,6 +390,14 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
                            player_threshold=player_threshold, max_ball_detections=max_ball_detections,
                            max_player_detections=max_player_detections)
     return detector
+
+
+def build_fpn(layers, out_channels, lateral_channels, return_layers, fpn_type=None):
+    if fpn_type is None:
+        return fpn.FPN(layers, out_channels=out_channels, return_layers=return_layers)
+    elif fpn_type == 'SE':
+        return fpn_se.FPN(layers, out_channels=out_channels, return_layers=return_layers)
+
 
 
 def build_classifier(lateral_channels, i_channels, classifier_type=None):
