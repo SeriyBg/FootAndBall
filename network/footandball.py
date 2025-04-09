@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 import network.fpn as fpn
-import network.fpn as fpn_se
+import network.fpn_se as fpn_se
 import network.nms as nms
 from data.augmentation import BALL_LABEL, PLAYER_LABEL, BALL_BBOX_SIZE
 from network.ball_classifier_3d import Classifier3D
@@ -394,9 +394,9 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
 
 def build_fpn(layers, out_channels, lateral_channels, return_layers, fpn_type=None):
     if fpn_type is None:
-        return fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
+        return fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=return_layers)
     elif fpn_type == 'SE':
-        return fpn_se.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=[1, 3])
+        return fpn_se.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=return_layers)
 
 
 def build_classifier(lateral_channels, i_channels, classifier_type=None):
