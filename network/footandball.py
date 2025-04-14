@@ -273,16 +273,10 @@ class FootAndBall(nn.Module):
         assert x[1].shape[3] == width // self.player_downsampling_factor
 
         ball_feature_map = self.ball_classifier(x[0])
-        # ball_feature_map, self.h_ball = self.ball_classifier(x[0], getattr(self, 'h_ball', None))
-        # self.h_ball = self.h_ball.detach()
 
         player_feature_map = self.player_classifier(x[1])
-        # player_feature_map, self.h_player = self.player_classifier(x[1], getattr(self, 'h_player', None))
-        # self.h_player = self.h_player.detach()
 
         player_bbox = self.player_regressor(x[1])
-        # player_bbox, self.h_player_regressor = self.player_regressor(x[1], getattr(self, 'h_player_regressor', None))
-        # self.h_player_regressor = self.h_player_regressor.detach()
 
         if self.phase == 'eval' or self.phase == 'detect':
             # In eval and detect mode, convert logits to normalized confidence in [0..1] range
@@ -314,6 +308,9 @@ class FootAndBall(nn.Module):
             if self.player_classifier is not None:
                 print('Player classifier:')
                 print(self.player_classifier)
+            if self.player_regressor is not None:
+                print('Player regressor:')
+                print(self.player_regressor)
 
         ap, tp = count_parameters(self.base_network)
         print('Base network parameters (all/trainable): {}/{}'.format(ap, tp))
@@ -370,7 +367,6 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
     # phase: 'train' or 'test'
     assert phase in ['train', 'test', 'detect']
 
-    layers, out_channels = fpn.make_modules(fpn.cfg['X'], batch_norm=True)
     # FPN returns 3 tensors for each input: one dowscaled 4 times in each input dimension, the other downscaled 16 times
     # tensor with 2 channels downscaled 4 times is used for ball detection
     # tensor with 2 channels downscaled 16 times is used for the player detection (1 location corresponds to 16x16 pixel block)
@@ -378,10 +374,10 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
     lateral_channels = 32
     i_channels = 32
 
-    base_net = build_fpn(layers, out_channels, lateral_channels, [1, 3], fpn_type="SE")
+    base_net = build_fpn(fpn.cfg['X'], lateral_channels, [1, 3], batch_norm=True, fpn_type='SE')
     ball_classifier = build_classifier(lateral_channels, i_channels, classifier_type="cbam")
 
-    player_classifier = build_classifier(lateral_channels, i_channels)
+    player_classifier = build_classifier(lateral_channels, i_channels)#, classifier_type="cbam")
     player_regressor = nn.Sequential(nn.Conv2d(lateral_channels, out_channels=i_channels, kernel_size=3, padding=1),
                                      nn.ReLU(inplace=True),
                                      nn.Conv2d(i_channels, out_channels=4, kernel_size=3, padding=1))
@@ -392,11 +388,15 @@ def build_footandball_detector2(phase='train', max_player_detections=100, max_ba
     return detector
 
 
-def build_fpn(layers, out_channels, lateral_channels, return_layers, fpn_type=None):
+def build_fpn(cfg, lateral_channels, return_layers, batch_norm=False, fpn_type=None):
     if fpn_type is None:
+        layers, out_channels = fpn.make_modules(cfg, batch_norm=batch_norm)
         return fpn.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=return_layers)
     elif fpn_type == 'SE':
+        layers, out_channels = fpn_se.make_modules(cfg, batch_norm=batch_norm)
         return fpn_se.FPN(layers, out_channels=out_channels, lateral_channels=lateral_channels, return_layers=return_layers)
+    else:
+        raise ValueError('Unknown FPN type: {}'.format(fpn_type))
 
 
 def build_classifier(lateral_channels, i_channels, classifier_type=None):

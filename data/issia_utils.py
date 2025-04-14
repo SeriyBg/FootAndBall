@@ -1,6 +1,7 @@
 # FootAndBall: Integrated Player and Ball Detector
 # Jacek Komorowski, Grzegorz Kurzejamski, Grzegorz Sarwas
 # Copyright (c) 2020 Sport Algorithmics and Gaming
+import time
 
 import numpy as np
 import os
@@ -465,7 +466,10 @@ def save_detection_results(camera_id, dataset_path, gt_annotations=None, annotat
     '''
     sequence = open_issia_sequence(camera_id, dataset_path)
     count_frames = -1
-    while (sequence.isOpened()):
+    dir_name = '/Users/sergebishyr/PhD/datasets/detection_result/' + time.strftime("%Y%m%d_%H%M") + '/'
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    while sequence.isOpened():
         ret, frame = sequence.read()
         count_frames += 1
 
@@ -479,7 +483,7 @@ def save_detection_results(camera_id, dataset_path, gt_annotations=None, annotat
         if not annotations is None:
             frame = _annotate_frame(frame, count_frames, annotations, color=(255, 0, 0))
 
-        cv2.imwrite('/Users/sergebishyr/PhD/datasets/detection_result/' + str(count_frames) + '.png', frame)
+        cv2.imwrite(dir_name + str(count_frames) + '.png', frame)
 
     sequence.release()
 

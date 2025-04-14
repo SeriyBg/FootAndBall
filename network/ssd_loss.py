@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 from torch import Tensor
+from torchvision.ops import focal_loss, sigmoid_focal_loss
 
 
 def hard_negative_mining(loss, labels, neg_pos_ratio):
